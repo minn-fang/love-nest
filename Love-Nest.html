@@ -1106,7 +1106,7 @@ function renderNotes() {
 
 /* ============ 备忘录 & 心里话：交互 ============ */
 function renderWhoToggle(boxId, sel) {
-  const box = $(boxId); if (!box) return;
+  const box = $('#' + boxId); if (!box) return;
   box.innerHTML = ['A', 'B'].map(w => {
     const name = esc(w === 'A' ? data.couple.nameA : data.couple.nameB);
     return '<button class="who-btn' + (sel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-ww="' + w + '" data-box="' + boxId + '">' + MASCOT[w] + '<span>' + name + '</span></button>';
@@ -1121,13 +1121,13 @@ $$('.who-toggle').forEach(box => box.addEventListener('click', e => {
   if (saveBtn) saveBtn.className = 'btn btn-main' + (b.dataset.ww === 'B' ? ' he' : '');
 }));
 function openMemo() {
-  memoWho = 'A'; renderWhoToggle('#memoWhoToggle', memoWho);
+  memoWho = 'A'; renderWhoToggle('memoWhoToggle', memoWho);
   $('#memoContent').value = '';
   $('#saveMemo').className = 'btn btn-main';
   openMask('memoMask');
 }
 function openNote() {
-  noteWho = 'A'; renderWhoToggle('#noteWhoToggle', noteWho);
+  noteWho = 'A'; renderWhoToggle('noteWhoToggle', noteWho);
   $('#noteContent').value = '';
   $('#saveNote').className = 'btn btn-main';
   openMask('noteMask');
