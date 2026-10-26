@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="异地情侣学习共享空间 - 一起学习的小窝，每天记录学习，按日期回看。">
+<title>一起学习的小窝 · 情侣学习共享空间</title>
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link rel="preconnect" href="https://miaoda.feishu.cn" crossorigin>
+<link href="https://miaoda.feishu.cn/fonts/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+<style>
+/* ============ 基础 ============ */
+:root{
+  --cream:#FFF6F1; --pink:#FF8BA7; --pink-deep:#F26D92; --pink-soft:#FFE3EC;
+  --peach:#FFB37E; --yellow:#FFD98E; --mint:#7FD4B8; --mint-soft:#DFF5EC;
+  --lav:#B9A0EC; --lav-soft:#F0EBFB; --ink:#59484E; --ink-soft:#9B8B90;
+  --font-display:'ZCOOL KuaiLe','YouYuan','幼圆','Microsoft YaHei',sans-serif;
+  --font-body:'PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif;
+  --shadow:0 8px 20px rgba(255,139,167,.14);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font-body);color:var(--ink);background:var(--cream);min-height:100vh;line-height:1.6}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea{font-family:inherit;font-size:16px}
+a{color:inherit;text-decoration:none}
+svg.i{width:18px;height:18px;display:inline-block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;flex:none}
+.mood{width:22px;height:22px;flex:none}
+button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ============ 背景装饰 ============ */
+.bg-deco{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg-deco i{position:absolute;border-radius:50%;opacity:.55}
+.bg-deco .b1{width:340px;height:340px;background:#FFE9F1;top:-90px;right:-80px}
+.bg-deco .b2{width:280px;height:280px;background:#E4F6EE;bottom:-80px;left:-90px}
+.bg-deco .b3{width:170px;height:170px;background:#FFF3DC;top:42%;left:-90px}
+.bg-deco svg{position:absolute;opacity:.22}
+.bg-deco .h1{top:120px;right:40px;color:#FF9DB8;width:34px;height:34px}
+.bg-deco .h2{top:320px;left:24px;color:#A7E3CC;width:26px;height:26px}
+.bg-deco .s1{bottom:140px;right:80px;color:#F4C45C;width:24px;height:24px}
+
+.wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:16px 16px 56px}
+
+/* ============ 顶栏 ============ */
+.topbar{display:flex;align-items:center;gap:12px;background:#fff;border-radius:20px;padding:12px 16px;box-shadow:var(--shadow)}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}
+.logo .heart{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#FFB1C6,#FF8BA7);display:grid;place-items:center;color:#fff;flex:none;box-shadow:0 4px 10px rgba(255,139,167,.4)}
+.logo h1{font-family:var(--font-display);font-size:20px;line-height:1.2;white-space:nowrap}
+.logo small{display:block;font-size:11px;color:var(--ink-soft);white-space:nowrap}
+.nav{margin-left:auto;display:flex;background:#FFF0F4;border-radius:999px;padding:4px;flex:none}
+.nav a{padding:8px 18px;border-radius:999px;font-size:14px;color:var(--ink-soft);font-weight:700;transition:.2s}
+.nav a.on{background:#fff;color:var(--pink-deep);box-shadow:0 3px 8px rgba(255,139,167,.25)}
+.days-badge{display:flex;align-items:center;gap:6px;background:#FFF4D6;border:1.5px dashed #F4C95D;color:#B98A1E;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap;flex:none}
+.days-badge .i{color:#F0A73E}
+.cloud-ind{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:#F3ECF0;color:#B9AEC0;flex:none;transition:.3s}
+.cloud-ind.syncing{background:#FFF4D6;color:#E0A73E;animation:cpulse 1.2s ease infinite}
+.cloud-ind.ok{background:#E4F6EE;color:#3FA98A}
+.cloud-ind.err{background:#FFE9E9;color:#E0618A}
+@keyframes cpulse{50%{opacity:.5}}
+
+/* ============ 统计卡片 ============ */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+.stat{background:#fff;border-radius:18px;padding:14px;box-shadow:var(--shadow);display:flex;gap:12px;align-items:center}
+.stat .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:#fff;flex:none}
+.ic.c-pink{background:var(--pink)}
+.ic.c-lav{background:var(--lav)}
+.ic.c-yellow{background:#F4BE50}
+.ic.c-mint{background:var(--mint)}
+.ic.c-peach{background:var(--peach)}
+.ic.c-blue{background:#9CC9F0}
+.stat .lb{font-size:12px;color:var(--ink-soft)}
+.stat .vl{font-size:16px;font-weight:800;font-family:var(--font-display);color:var(--ink);line-height:1.3}
+.stat .sub{font-size:11px;color:var(--ink-soft);margin-top:1px}
+
+/* ============ 区块标题 ============ */
+.sec-h{display:flex;align-items:center;gap:8px;margin:24px 4px 12px}
+.sec-h .t{font-family:var(--font-display);font-size:18px}
+.sec-h .edit{margin-left:auto;color:var(--ink-soft);display:flex;align-items:center;gap:5px;font-size:12px;padding:7px 12px;border-radius:999px;background:#fff;box-shadow:0 4px 12px rgba(255,139,167,.12);transition:.2s}
+.sec-h .edit:hover{color:var(--pink-deep)}
+.sec-h .note{margin-left:auto;font-size:12px;color:var(--ink-soft);background:#fff;padding:7px 12px;border-radius:999px;box-shadow:0 4px 12px rgba(255,139,167,.12)}
+
+/* ============ 日期导航 ============ */
+.date-nav{display:flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:10px 12px;box-shadow:var(--shadow)}
+.arr{width:40px;height:40px;border-radius:13px;background:#FFF0F4;color:var(--pink-deep);display:grid;place-items:center;flex:none;transition:.2s}
+.arr:hover{background:#FFE3EC}
+.arr.sm{width:34px;height:34px;border-radius:11px}
+.date-nav .mid{flex:1;text-align:center;min-width:0}
+.date-nav .d{font-family:var(--font-display);font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.date-nav .w{font-size:12px;color:var(--ink-soft)}
+.today-btn{background:var(--pink);color:#fff;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;box-shadow:0 4px 10px rgba(255,139,167,.35);flex:none;transition:.2s}
+.today-btn:hover{background:var(--pink-deep)}
+.today-btn.sm{padding:7px 12px;font-size:12px;box-shadow:none}
+
+/* ============ 进度 ============ */
+.prog{background:#fff;border-radius:18px;padding:14px 16px;margin-top:12px;box-shadow:var(--shadow)}
+.prog .row{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink-soft)}
+.prog .row b{color:var(--ink);font-weight:700}
+.prog .bar{height:12px;background:#FFF0F4;border-radius:999px;margin-top:9px;overflow:hidden}
+.prog .fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#FFB1C6,#FF8BA7);transition:width .4s}
+.prog .tip{font-size:11px;color:var(--ink-soft);margin-top:6px}
+
+/* ============ 学习记录 ============ */
+.records{display:grid;gap:14px;margin-top:14px}
+@media(min-width:760px){.records{grid-template-columns:1fr 1fr}}
+.pcard{background:#fff;border-radius:22px;padding:16px;box-shadow:var(--shadow)}
+.pcard .head{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:2px dashed #F4DEE4}
+.pcard.he .head{border-color:#D9EFE6}
+.mascot{width:46px;height:46px;flex:none;display:block}
+.pcard .nm{font-family:var(--font-display);font-size:16px}
+.pcard .tt{font-size:12px;color:var(--ink-soft)}
+.pcard .add{margin-left:auto;width:36px;height:36px;border-radius:13px;background:var(--pink-soft);color:var(--pink-deep);display:grid;place-items:center;flex:none;transition:.2s}
+.pcard .add:hover{transform:scale(1.08)}
+.pcard.he .add{background:var(--mint-soft);color:#3FA98A}
+.entry{position:relative;border-radius:16px;background:#FFF7FA;padding:12px 14px;margin-top:10px}
+.pcard.he .entry{background:#F1FAF7}
+.entry .top{display:flex;align-items:center;gap:8px}
+.chip{font-size:12px;font-weight:700;background:var(--pink);color:#fff;padding:3px 11px;border-radius:999px;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pcard.he .chip{background:var(--mint)}
+.sample-tag{font-size:10px;background:#EFE7FB;color:#8B6BC4;padding:2px 8px;border-radius:999px;flex:none}
+.entry .tm{font-size:11px;color:var(--ink-soft);margin-left:auto;flex:none}
+.entry .del{color:#CEBCC1;padding:4px;border-radius:8px;flex:none;transition:.2s}
+.entry .del:hover{color:#E0618A;background:#FFE9F0}
+.pcard.he .entry .del:hover{background:#E3F5EC}
+.entry .tx{font-size:14px;margin-top:8px;line-height:1.7;word-break:break-word;white-space:pre-wrap}
+.entry .ft{display:flex;align-items:center;gap:7px;margin-top:10px;color:var(--ink-soft);font-size:12px}
+.entry .mood{width:22px;height:22px;flex:none}
+.entry .mini{opacity:.5}
+.empty{border-radius:16px;border:2px dashed #F4DEE4;background:#FFFBFD;padding:22px 12px;text-align:center;margin-top:10px;color:var(--ink-soft);font-size:13px}
+.pcard.he .empty{border-color:#D9EFE6;background:#FBFFFD}
+.empty svg{width:42px;height:42px;color:#FFC4D6;margin-bottom:6px}
+.empty .hint{font-size:11px;color:var(--ink-soft);opacity:.8;margin-top:2px}
+
+/* ============ 日历 ============ */
+.cal-card{background:#fff;border-radius:22px;padding:16px;box-shadow:var(--shadow)}
+.cal-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.cal-head .t{font-family:var(--font-display);font-size:17px;flex:1;text-align:center}
+.cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:4px}
+.cal-week span{text-align:center;font-size:12px;color:var(--ink-soft);padding:4px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-cell{aspect-ratio:1;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:2px 0;transition:.15s}
+.cal-cell:hover{background:#FFF0F4}
+.cal-cell .cal-num{font-size:14px;font-weight:700;color:var(--ink)}
+.cal-cell.blank{pointer-events:none;visibility:hidden}
+.cal-cell.today .cal-num{color:var(--pink-deep)}
+.cal-cell.today{box-shadow:inset 0 0 0 2px var(--pink)}
+.cal-cell.sel{background:#FFE9F0}
+.cal-cell.sel .cal-num{color:var(--pink-deep);font-family:var(--font-display);font-size:15px}
+.cal-dots{display:flex;gap:3px;height:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:#E9E0E3;display:inline-block}
+.dot.on.dot-a{background:var(--pink)}
+.dot.on.dot-b{background:var(--mint)}
+.cal-foot{display:flex;gap:16px;justify-content:center;align-items:center;margin-top:14px;font-size:12px;color:var(--ink-soft);flex-wrap:wrap}
+.cal-foot .dot{width:7px;height:7px}
+.cal-foot span{display:flex;align-items:center;gap:6px}
+
+/* ============ 视图切换 ============ */
+.section{display:none}
+.section.on{display:block}
+.foot{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:34px;line-height:1.9}
+
+/* ============ 弹窗 ============ */
+.mask{position:fixed;inset:0;background:rgba(89,72,78,.38);backdrop-filter:blur(3px);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+.mask.on{display:flex}
+@media(min-width:640px){.mask{align-items:center;padding:24px}}
+.modal{background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:470px;padding:20px 20px 24px;max-height:88vh;overflow:auto;animation:up .25s ease}
+@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}
+@media(min-width:640px){.modal{border-radius:26px}}
+.modal-top{display:flex;align-items:center;gap:8px}
+.modal-top h3{font-family:var(--font-display);font-size:18px;flex:1}
+.modal-top .x{width:34px;height:34px;border-radius:11px;background:#F6ECEF;color:var(--ink-soft);display:grid;place-items:center;flex:none}
+.modal-top .x:hover{color:var(--pink-deep)}
+.field{margin-top:15px}
+.field label{font-size:12px;color:var(--ink-soft);display:block;margin-bottom:6px;font-weight:700}
+.field input,.field textarea{width:100%;border:2px solid #F3E4E8;border-radius:14px;padding:11px 12px;background:#FFFDFE;color:var(--ink);outline:none;transition:.2s}
+.field input:focus,.field textarea:focus{border-color:var(--pink)}
+.field textarea{resize:vertical;min-height:74px}
+.who-toggle{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.who-btn{border:2px solid #F3E4E8;border-radius:16px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:700;font-size:14px;color:var(--ink-soft);background:#fff;transition:.2s}
+.who-btn.on-a{border-color:var(--pink);background:#FFF0F4;color:var(--pink-deep)}
+.who-btn.on-b{border-color:var(--mint);background:#F0FAF6;color:#3FA98A}
+.who-btn .mascot{width:38px;height:38px}
+.moods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mood-btn{border:2px solid #F3E4E8;border-radius:14px;padding:9px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--ink-soft);background:#fff;transition:.2s}
+.mood-btn.on{border-color:var(--pink);background:#FFF0F4;color:var(--pink-deep)}
+.mood-btn svg{width:24px;height:24px}
+.modal-ft{display:flex;gap:10px;margin-top:20px}
+.btn{flex:1;border-radius:16px;padding:12px;font-weight:700;font-size:15px;transition:.2s}
+.btn-ghost{background:#F6ECEF;color:var(--ink-soft)}
+.btn-ghost:hover{background:#F0E0E5}
+.btn-main{background:var(--pink);color:#fff;box-shadow:0 6px 14px rgba(255,139,167,.35)}
+.btn-main:hover{background:var(--pink-deep)}
+.btn-main.he{background:var(--mint);color:#fff;box-shadow:0 6px 14px rgba(127,212,184,.4)}
+.btn-main.he:hover{background:#66C5A6}
+.btn-danger{flex:none;background:#FFF0F0;color:#E0618A;padding:12px 16px;border-radius:16px;font-weight:700;font-size:13px}
+.btn-danger:hover{background:#FFE3E3}
+.settings-note{margin-top:14px;font-size:11px;color:var(--ink-soft);background:#F8F3F0;border-radius:12px;padding:10px 12px;line-height:1.7}
+.hint-txt{font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.5}
+.cloud-sec{margin-top:18px;padding-top:16px;border-top:2px dashed #F4DEE4}
+.sec-h2{display:flex;align-items:center;gap:6px;font-family:var(--font-display);font-size:15px;color:var(--ink);margin-bottom:10px}
+.sec-h2 .i{color:var(--lav)}
+.switch-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);cursor:pointer;margin-bottom:12px;font-weight:700}
+.switch-row input{position:absolute;opacity:0}
+.sw{width:40px;height:22px;border-radius:999px;background:#E9DDE2;position:relative;transition:.25s;flex:none}
+.sw::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.switch-row input:checked + .sw{background:var(--mint)}
+.switch-row input:checked + .sw::after{left:20px}
+.switch-row input:focus-visible + .sw{outline:3px solid #BDEAD8;outline-offset:2px}
+.settings-row{display:flex;gap:10px}
+.settings-row .field{flex:1}
+
+/* ============ Toast ============ */
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(24px);background:#5B4B52;color:#fff;padding:12px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.3s;z-index:60;box-shadow:0 10px 24px rgba(0,0,0,.22);max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ============ 窄屏微调 ============ */
+@media(max-width:520px){
+  .topbar{flex-wrap:wrap;padding:12px}
+  .logo h1{font-size:18px}
+  .nav{margin-left:0;order:3;width:100%;justify-content:center}
+  .nav a{flex:1;text-align:center}
+  .days-badge{padding:6px 10px;font-size:12px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .date-nav .d{font-size:15px}
+}
+@media(min-width:760px){
+  .stats{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 背景装饰 ===== -->
+<div class="bg-deco" aria-hidden="true">
+  <i class="b1"></i><i class="b2"></i><i class="b3"></i>
+  <svg class="h1" viewBox="0 0 24 24"><path d="M12 21C7.2 16.9 2.8 13.1 2.8 9.1c0-3 2.3-5.1 5-5.1 1.8 0 3.5 1 4.2 2.7C12.7 5 14.4 4 16.2 4c2.7 0 5 2.1 5 5.1 0 4-4.4 7.8-9.2 11.9z" fill="currentColor"/></svg>
+  <svg class="h2" viewBox="0 0 24 24"><path d="M12 21C7.2 16.9 2.8 13.1 2.8 9.1c0-3 2.3-5.1 5-5.1 1.8 0 3.5 1 4.2 2.7C12.7 5 14.4 4 16.2 4c2.7 0 5 2.1 5 5.1 0 4-4.4 7.8-9.2 11.9z" fill="currentColor"/></svg>
+  <svg class="s1" viewBox="0 0 24 24"><path d="M12 2.5l2.6 5.6 6.2.9-4.5 4.4 1.1 6.1L12 16.6 6.6 19.5l1.1-6.1L3.2 9l6.2-.9z" fill="currentColor"/></svg>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== 顶栏 ===== -->
+  <header class="topbar">
+    <div class="logo">
+      <span class="heart"><svg class="i" style="width:20px;height:20px"><use href="#i-heart" xlink:href="#i-heart"/></svg></span>
+      <div><h1>一起学习的小窝</h1><small>相隔再远，也要一起变好呀</small></div>
+    </div>
+    <nav class="nav">
+      <a href="#today" data-view="today">今日</a>
+      <a href="#calendar" data-view="calendar">日历</a>
+    </nav>
+    <div class="days-badge"><svg class="i" style="width:15px;height:15px"><use href="#i-heart" xlink:href="#i-heart"/></svg><span id="daysBadge">在一起 1 天</span></div>
+    <div class="cloud-ind" id="cloudInd" title="云端同步：未开启"><svg class="i" style="width:16px;height:16px"><use href="#i-cloud" xlink:href="#i-cloud"/></svg></div>
+  </header>
+
+  <!-- ===== 统计卡片 ===== -->
+  <section class="stats">
+    <div class="stat"><span class="ic c-pink"><svg class="i"><use href="#i-pin" xlink:href="#i-pin"/></svg></span><div><div class="lb">异地距离</div><div class="vl" id="stDist">成都 ⇄ 北京</div><div class="sub" id="stDistSub">1525 km</div></div></div>
+    <div class="stat"><span class="ic c-lav"><svg class="i"><use href="#i-gift" xlink:href="#i-gift"/></svg></span><div><div class="lb">下次见面</div><div class="vl" id="stMeet">还有 30 天</div><div class="sub" id="stMeetSub">2026-11-25</div></div></div>
+    <div class="stat"><span class="ic c-yellow"><svg class="i"><use href="#i-clock" xlink:href="#i-clock"/></svg></span><div><div class="lb">本月共学时长</div><div class="vl" id="stMonMin">0 分钟</div><div class="sub" id="stMonMinSub">每月 1 号重新计算</div></div></div>
+    <div class="stat"><span class="ic c-mint"><svg class="i"><use href="#i-star" xlink:href="#i-star"/></svg></span><div><div class="lb">本月打卡次数</div><div class="vl" id="stMonCnt">0 天</div><div class="sub" id="stMonCntSub">两人都学习（本月）</div></div></div>
+    <div class="stat"><span class="ic c-peach"><svg class="i"><use href="#i-book" xlink:href="#i-book"/></svg></span><div><div class="lb">累计共学时长</div><div class="vl" id="stTotMin">0 分钟</div><div class="sub" id="stTotMinSub">从 10-07 起累积</div></div></div>
+    <div class="stat"><span class="ic c-blue"><svg class="i"><use href="#i-heart" xlink:href="#i-heart"/></svg></span><div><div class="lb">累计打卡次数</div><div class="vl" id="stTotCnt">0 天</div><div class="sub" id="stTotCntSub">两人都学习（累计）</div></div></div>
+  </section>
+
+  <!-- ===== 视图：今日 ===== -->
+  <section class="section on" id="today">
+    <div class="sec-h">
+      <span class="t">今日学习</span>
+      <button class="edit" id="openSettings"><svg class="i" style="width:15px;height:15px"><use href="#i-gear" xlink:href="#i-gear"/></svg>设置</button>
+    </div>
+
+    <div class="date-nav">
+      <button class="arr" id="prevDay" aria-label="前一天"><svg class="i"><use href="#i-chev-l" xlink:href="#i-chev-l"/></svg></button>
+      <div class="mid"><div class="d" id="dateD">2026年10月26日</div><div class="w" id="dateW">周一</div></div>
+      <button class="arr" id="nextDay" aria-label="后一天"><svg class="i"><use href="#i-chev-r" xlink:href="#i-chev-r"/></svg></button>
+      <button class="today-btn" id="todayBtn">今天</button>
+    </div>
+
+    <div class="prog">
+      <div class="row"><span id="progRow">兔兔 0 分钟 · 熊熊 0 分钟</span><span id="progTotal">0 / 120 分钟</span></div>
+      <div class="bar"><div class="fill" id="progFill" style="width:0%"></div></div>
+      <div class="tip" id="progTip">每天一起学习 120 分钟，就是给彼此最好的礼物</div>
+    </div>
+
+    <div class="records" id="recordsBox"></div>
+  </section>
+
+  <!-- ===== 视图：日历 ===== -->
+  <section class="section" id="calendar">
+    <div class="sec-h">
+      <span class="t">打卡日历</span>
+      <span class="note">点点小圆点，看看谁学了</span>
+    </div>
+    <div class="cal-card">
+      <div class="cal-head">
+        <button class="arr sm" id="calPrev" aria-label="上一月"><svg class="i"><use href="#i-chev-l" xlink:href="#i-chev-l"/></svg></button>
+        <span class="t" id="calMonth">2026年10月</span>
+        <button class="arr sm" id="calNext" aria-label="下一月"><svg class="i"><use href="#i-chev-r" xlink:href="#i-chev-r"/></svg></button>
+        <button class="today-btn sm" id="calToday">今天</button>
+      </div>
+      <div class="cal-week"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-foot">
+        <span><i class="dot on dot-a"></i><span id="calLegA">兔兔</span></span>
+        <span><i class="dot on dot-b"></i><span id="calLegB">熊熊</span></span>
+        <span>点击日期查看当天记录</span>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    小提示：记录保存在本机浏览器的 localStorage 里；在设置里开启「云端同步」后，会自动保存到你们的阿里云 OSS<br>
+    云端一份整包快照：先下载、再修改、再上传，两个人就可以随时共享
+  </footer>
+</div>
+
+<!-- ===== 添加记录弹窗 ===== -->
+<div class="mask" id="addMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="modal-top">
+      <h3 id="addTitle">记录今天的学习</h3>
+      <button class="x" data-close aria-label="关闭"><svg class="i"><use href="#i-close" xlink:href="#i-close"/></svg></button>
+    </div>
+    <div class="field"><label>谁在学呀</label><div class="who-toggle" id="whoToggle"></div></div>
+    <div class="field"><label>科目</label><input type="text" id="fSubject" maxlength="24" placeholder="比如：高数、英语、论文…"></div>
+    <div class="field"><label>学了什么</label><textarea id="fContent" maxlength="200" placeholder="今天学了什么、有什么收获呀～"></textarea></div>
+    <div class="field"><label>学了多久（分钟）</label><input type="number" id="fMinutes" min="0" max="1440" value="30"></div>
+    <div class="field"><label>今天的心情</label><div class="moods" id="moods"></div></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" data-close>再想想</button>
+      <button class="btn btn-main" id="saveAdd">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 设置弹窗 ===== -->
+<div class="mask" id="setMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="setTitle">
+    <div class="modal-top">
+      <h3 id="setTitle">小窝设置</h3>
+      <button class="x" data-close aria-label="关闭"><svg class="i"><use href="#i-close" xlink:href="#i-close"/></svg></button>
+    </div>
+    <div class="settings-row">
+      <div class="field"><label>粉色昵称（兔兔）</label><input type="text" id="sNameA" maxlength="8"></div>
+      <div class="field"><label>绿色昵称（熊熊）</label><input type="text" id="sNameB" maxlength="8"></div>
+    </div>
+    <div class="settings-row">
+      <div class="field"><label>在一起的日子</label><input type="date" id="sStart"></div>
+      <div class="field"><label>下次见面日期</label><input type="date" id="sMeet"></div>
+    </div>
+    <div class="settings-row">
+      <div class="field"><label>城市 A</label><input type="text" id="sCityA" maxlength="12" list="cityList" placeholder="如：成都"></div>
+      <div class="field"><label>城市 B</label><input type="text" id="sCityB" maxlength="12" list="cityList" placeholder="如：北京"></div>
+    </div>
+    <div class="field"><label>两地距离</label><input type="text" id="sDist" maxlength="16" placeholder="比如：1525 km"><div class="hint-txt" id="distHint">输入两个城市后自动计算直线距离，也可以手动填写</div></div>
+    <datalist id="cityList">
+      <option value="北京"></option><option value="上海"></option><option value="广州"></option><option value="深圳"></option>
+      <option value="成都"></option><option value="杭州"></option><option value="重庆"></option><option value="武汉"></option>
+      <option value="西安"></option><option value="南京"></option><option value="天津"></option><option value="苏州"></option>
+      <option value="长沙"></option><option value="郑州"></option><option value="青岛"></option><option value="沈阳"></option>
+      <option value="大连"></option><option value="厦门"></option><option value="福州"></option><option value="济南"></option>
+      <option value="昆明"></option><option value="南宁"></option><option value="哈尔滨"></option><option value="长春"></option>
+      <option value="石家庄"></option><option value="太原"></option><option value="合肥"></option><option value="南昌"></option>
+      <option value="贵阳"></option><option value="兰州"></option><option value="乌鲁木齐"></option><option value="呼和浩特"></option>
+      <option value="银川"></option><option value="西宁"></option><option value="拉萨"></option><option value="海口"></option>
+      <option value="三亚"></option><option value="香港"></option><option value="澳门"></option><option value="台北"></option>
+      <option value="无锡"></option><option value="宁波"></option><option value="东莞"></option><option value="佛山"></option>
+      <option value="珠海"></option><option value="温州"></option><option value="常州"></option><option value="南通"></option>
+      <option value="徐州"></option><option value="烟台"></option><option value="泉州"></option><option value="绍兴"></option>
+    </datalist>
+    <div class="cloud-sec">
+      <div class="sec-h2"><svg class="i" style="width:17px;height:17px"><use href="#i-cloud" xlink:href="#i-cloud"/></svg><span>云端同步（阿里云 OSS）</span></div>
+      <label class="switch-row"><input type="checkbox" id="cEnabled"><span class="sw"></span><span>开启云端同步，每次保存自动上传</span></label>
+      <div class="settings-row">
+        <div class="field"><label>Bucket 名称</label><input type="text" id="cBucket" maxlength="60" placeholder="our-love-nest"></div>
+        <div class="field"><label>Endpoint 地域</label><input type="text" id="cEndpoint" maxlength="60" placeholder="oss-cn-beijing.aliyuncs.com"></div>
+      </div>
+      <div class="field"><label>云端数据文件名</label><input type="text" id="cKey" maxlength="60" placeholder="data.json"></div>
+      <div class="modal-ft">
+        <button class="btn btn-ghost" id="cloudUploadBtn">上传到云端</button>
+        <button class="btn btn-main he" id="cloudDownloadBtn">从云端下载</button>
+      </div>
+      <div class="hint-txt" id="cloudStatus">未开启云端同步</div>
+      <div class="hint-txt" id="keyStatus">AccessKey 未配置（见下方说明）</div>
+      <div class="settings-note">
+        AccessKey ID / Secret 不在页面上显示：用 VSCode 打开本文件，在文件顶部「云端配置」处填写（搜索 OSS_AK / OSS_SK 两个位置）。<br>
+        获取方式：阿里云控制台右上角头像 → AccessKey 管理（ram.console.aliyun.com/manage/ak）。Secret 只在创建时显示一次，忘记后无法再查看，只能重新创建；建议创建 RAM 子账号 Key，只授权本 Bucket 读写。<br>
+        使用前先到 OSS 控制台给本 Bucket 开启 CORS（来源 *，方法 GET / PUT / HEAD / OPTIONS，请求头 *，暴露头 ETag）。<br>
+        云端只存一份整包快照：先「从云端下载」再修改再「上传到云端」，两人不要同时编辑互相覆盖。
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-danger" id="clearRecords">清空记录</button>
+      <button class="btn btn-main" id="saveSettings">保存设置</button>
+    </div>
+    <div class="settings-note">「清空记录」会清掉所有学习记录重新开始。统计按自然月计算，每月 1 号自动重新累积；累计则从「在一起的日子」（2026-10-07）起一直累积。</div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<!-- ===== SVG 图标库 ===== -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21C7.2 16.9 2.8 13.1 2.8 9.1c0-3 2.3-5.1 5-5.1 1.8 0 3.5 1 4.2 2.7C12.7 5 14.4 4 16.2 4c2.7 0 5 2.1 5 5.1 0 4-4.4 7.8-9.2 11.9z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.2-6.5-10a6.5 6.5 0 0 1 13 0C18.5 15.8 12 21 12 21z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="10.5" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M2.5 6.5h19V9h-19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9v12M12 9c-1.2-2.8-3.8-2.7-4.4-1.1.7 1.4 2.8 1.7 4.4 1.1zM12 9c1.2-2.8 3.8-2.7 4.4-1.1-.7 1.4-2.8 1.7-4.4 1.1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.5l2.6 5.6 6.2.9-4.5 4.4 1.1 6.1L12 16.6 6.6 19.5l1.1-6.1L3.2 9l6.2-.9z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4M4 10h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="M14.5 5 8 12l6.5 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="M9.5 5 16 12l-6.5 7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9l1-13M10 11v6M14 11v6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.5l1.7 4.3 4.3 1.7-4.3 1.7L12 15.5l-1.7-4.3L6 9.5l4.3-1.7z" fill="currentColor" stroke="none"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.2 18.5H9a6.5 6.5 0 1 1 6.2-8.6A5.2 5.2 0 0 1 17.2 18.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 13.5v-3M10.3 12.2 12 10.5l1.7 1.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<script>
+/* ============ 工具函数 ============ */
+const pad = n => String(n).padStart(2, '0');
+const fmt = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const todayStr = () => fmt(new Date());
+const parse = s => { const p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const utc = s => { const p = s.split('-').map(Number); return Date.UTC(p[0], p[1] - 1, p[2]); };
+const dayDiff = (a, b) => Math.round((utc(a) - utc(b)) / 86400000);
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return fmt(d); };
+const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const dateLabel = s => { const p = s.split('-').map(Number); return p[0] + '年' + p[1] + '月' + p[2] + '日'; };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+/* ============ 心情配置与表情 ============ */
+const MOODS = {
+  energy: { n: '元气', c: '#FFD98E' },
+  calm:   { n: '平静', c: '#BDEAD8' },
+  tired:  { n: '疲惫', c: '#E4D8F7' },
+  hard:   { n: '努力', c: '#FFD0B0' }
+};
+function moodSvg(k) {
+  const m = MOODS[k] || MOODS.calm;
+  let face, eyes;
+  if (k === 'energy') face = '<path d="M6.5 12.5q5.5 6 11 0" stroke="#5B4B52" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+  else if (k === 'tired') { face = '<path d="M7 14.5h10" stroke="#5B4B52" stroke-width="1.6" stroke-linecap="round"/>'; eyes = '<path d="M8.4 9.6q1-1.8 2.4 0M13.2 9.6q1-1.8 2.4 0" stroke="#5B4B52" stroke-width="1.6" fill="none" stroke-linecap="round"/>'; }
+  else if (k === 'hard') face = '<path d="M7.5 15.5h9" stroke="#5B4B52" stroke-width="1.6" stroke-linecap="round"/><path d="M16 6.5l.8 1.8 1.8.7-1.8.7-.8 1.8-.8-1.8-1.8-.7 1.8-.7z" fill="#FFD98E" stroke="none"/>';
+  else face = '<path d="M7.5 13q4.5 3 9 0" stroke="#5B4B52" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+  if (!eyes) eyes = '<circle cx="8.8" cy="10" r="1.3" fill="#5B4B52"/><circle cx="15.2" cy="10" r="1.3" fill="#5B4B52"/>';
+  return '<svg viewBox="0 0 24 24" class="mood" aria-hidden="true"><circle cx="12" cy="12" r="10.2" fill="' + m.c + '"/><circle cx="6.8" cy="13.6" r="1.7" fill="#fff" opacity=".7"/><circle cx="17.2" cy="13.6" r="1.7" fill="#fff" opacity=".7"/>' + eyes + face + '</svg>';
+}
+
+/* ============ 头像（SVG 吉祥物） ============ */
+const MASCOT = {
+  A: '<svg viewBox="0 0 120 120" class="mascot" aria-hidden="true">' +
+     '<path d="M42 34C35 13 47 4 56 15c5 6 7 16 5 27" fill="#FFCFDF"/>' +
+     '<path d="M78 34c7-21-5-30-14-19-5 6-7 16-5 27" fill="#FFCFDF"/>' +
+     '<path d="M45 32c-5-14 3-21 9-13 3.5 4.5 5 11 4 18" fill="#FF9DB8"/>' +
+     '<path d="M75 32c5-14-3-21-9-13-3.5 4.5-5 11-4 18" fill="#FF9DB8"/>' +
+     '<circle cx="60" cy="64" r="35" fill="#FFB8CE"/>' +
+     '<circle cx="42" cy="70" r="7.5" fill="#FF8AA8" opacity=".75"/>' +
+     '<circle cx="78" cy="70" r="7.5" fill="#FF8AA8" opacity=".75"/>' +
+     '<path d="M44 59q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
+     '<path d="M64 59q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
+     '<path d="M55 77q5 4.5 10 0" stroke="#7A4457" stroke-width="2.8" fill="none" stroke-linecap="round"/></svg>',
+  B: '<svg viewBox="0 0 120 120" class="mascot" aria-hidden="true">' +
+     '<circle cx="31" cy="35" r="14" fill="#A7E3CC"/>' +
+     '<circle cx="89" cy="35" r="14" fill="#A7E3CC"/>' +
+     '<circle cx="31" cy="35" r="7" fill="#CFF3E4"/>' +
+     '<circle cx="89" cy="35" r="7" fill="#CFF3E4"/>' +
+     '<circle cx="60" cy="64" r="37" fill="#C4EEDB"/>' +
+     '<circle cx="43" cy="72" r="7.5" fill="#8FD4B6" opacity=".7"/>' +
+     '<circle cx="77" cy="72" r="7.5" fill="#8FD4B6" opacity=".7"/>' +
+     '<ellipse cx="60" cy="76" rx="12" ry="8.5" fill="#F4FCF9"/>' +
+     '<circle cx="60" cy="71" r="2.2" fill="#7A4457"/>' +
+     '<path d="M44 60q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
+     '<path d="M64 60q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
+     '<path d="M55 82q5 4 10 0" stroke="#7A4457" stroke-width="2.8" fill="none" stroke-linecap="round"/></svg>'
+};
+
+/* ============ 城市坐标与直线距离 ============ */
+const CITIES = {
+  '北京':[39.9042,116.4074],'上海':[31.2304,121.4737],'广州':[23.1291,113.2644],'深圳':[22.5431,114.0579],
+  '成都':[30.5728,104.0668],'杭州':[30.2741,120.1551],'重庆':[29.5630,106.5516],'武汉':[30.5928,114.3055],
+  '西安':[34.3416,108.9398],'南京':[32.0603,118.7969],'天津':[39.3434,117.3616],'苏州':[31.2989,120.5853],
+  '长沙':[28.2282,112.9388],'郑州':[34.7466,113.6254],'青岛':[36.0671,120.3826],'沈阳':[41.8057,123.4315],
+  '大连':[38.9140,121.6147],'厦门':[24.4798,118.0894],'福州':[26.0745,119.2965],'济南':[36.6512,117.1201],
+  '昆明':[25.0389,102.7183],'南宁':[22.8170,108.3665],'哈尔滨':[45.8038,126.5349],'长春':[43.8171,125.3235],
+  '石家庄':[38.0428,114.5149],'太原':[37.8706,112.5489],'合肥':[31.8206,117.2272],'南昌':[28.6820,115.8579],
+  '贵阳':[26.6470,106.6302],'兰州':[36.0611,103.8343],'乌鲁木齐':[43.8256,87.6168],'呼和浩特':[40.8424,111.7490],
+  '银川':[38.4872,106.2309],'西宁':[36.6171,101.7782],'拉萨':[29.6520,91.1721],'海口':[20.0444,110.1999],
+  '三亚':[18.2528,109.5119],'香港':[22.3193,114.1694],'澳门':[22.1987,113.5439],'台北':[25.0330,121.5654],
+  '无锡':[31.4912,120.3119],'宁波':[29.8683,121.5440],'东莞':[23.0207,113.7518],'佛山':[23.0218,113.1219],
+  '珠海':[22.2707,113.5767],'温州':[27.9939,120.6994],'常州':[31.8107,119.9744],'南通':[31.9802,120.8943],
+  '徐州':[34.2044,117.2856],'烟台':[37.4638,121.4481],'泉州':[24.8741,118.6757],'绍兴':[30.0303,120.5800]
+};
+function cityDist(a, b) {
+  const A = CITIES[a], B = CITIES[b];
+  if (!A || !B) return null;
+  const R = 6371, rad = x => x * Math.PI / 180;
+  const dLat = rad(B[0] - A[0]), dLon = rad(B[1] - A[1]);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(A[0])) * Math.cos(rad(B[0])) * Math.sin(dLon / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)));
+}
+function distHintText() {
+  const a = $('#sCityA').value.trim(), b = $('#sCityB').value.trim();
+  const d = cityDist(a, b);
+  if (d !== null) { $('#sDist').value = d + ' km'; $('#distHint').textContent = '已按直线距离自动计算：' + d + ' km（也可以手动改）'; }
+  else if (a && b) { $('#distHint').textContent = '这两个城市还没收录，请手动填写距离'; }
+  else { $('#distHint').textContent = '输入两个城市后自动计算直线距离，也可以手动填写'; }
+}
+
+/* ============ 数据：默认配置 / 读写 ============ */
+const LS_KEY = 'qlp-couple-study-v2';
+function defaults() {
+  const t = todayStr();
+  return {
+    couple: { nameA: '兔兔', nameB: '熊熊', cityA: '成都', cityB: '北京', distance: '1525 km', startDate: '2026-10-07', meetDate: addDays(t, 30) },
+    records: {}
+  };
+}
+function load() {
+  try { const raw = localStorage.getItem(LS_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+  const d = defaults(); persist(d); return d;
+}
+
+/* ============ 云端同步（阿里云 OSS） ============ */
+/* ============ 云端配置（AccessKey 只在这里填写，不会显示在页面里）============
+ * 获取方式：阿里云控制台右上角头像 → AccessKey 管理
+ *           https://ram.console.aliyun.com/manage/ak
+ * AccessKey ID 随时可见；Secret 只在创建时显示一次，忘记后无法查看，需重新创建。
+ * 建议创建 RAM 子账号 Key，只授权本 Bucket 的读写权限，不要用主账号 Key。
+ */
+const OSS_AK = 'LTAI5t6Fu2HJXDPRvJmtykUn';      // ← 把 AccessKey ID 填在这里，例如 'LTAI5tXXXXXXXX'
+const OSS_SK = 'FSEVnlAI5WZCGVlYBlJpBZK4M81Jl8';      // ← 把 AccessKey Secret 填在这里
+const OSS_TOKEN = '';   // ← 使用 STS 临时凭证才填，RAM 永久 Key 留空
+const CLOUD_KEY = 'qlp-couple-cloud-v1';
+function loadCloud() {
+  try { const raw = localStorage.getItem(CLOUD_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+  return { enabled: false, bucket: 'our-love-nest', endpoint: 'oss-cn-beijing.aliyuncs.com', key: 'data.json', lastSync: '' };
+}
+let cloud = loadCloud();
+/* 兼容旧版本：之前填在设置里的密钥仍在浏览器本地，可继续用（同样不在页面显示） */
+const _oldCloud = (() => { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || '{}'); } catch (e) { return {}; } })();
+function cloudAk() { return OSS_AK || _oldCloud.ak || ''; }
+function cloudSk() { return OSS_SK || _oldCloud.sk || ''; }
+function cloudToken() { return OSS_TOKEN || _oldCloud.token || ''; }
+function saveCloud() {
+  const legacy = (() => { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || '{}'); } catch (e) { return {}; } })();
+  try { localStorage.setItem(CLOUD_KEY, JSON.stringify({ enabled: cloud.enabled, bucket: cloud.bucket, endpoint: cloud.endpoint, key: cloud.key, lastSync: cloud.lastSync, ak: legacy.ak || '', sk: legacy.sk || '', token: legacy.token || '' })); } catch (e) {}
+}
+function cloudOk() { return cloud.enabled && cloud.bucket && cloud.endpoint && cloudAk() && cloudSk(); }
+
+/* 纯 JS 实现 SHA-1 / HMAC-SHA1 / Base64（file:// 页面 crypto.subtle 不可用，故自实现签名） */
+const utf8 = s => new TextEncoder().encode(s);
+function sha1Bytes(bytes) {
+  const len = bytes.length, bitLenLo = (len << 3) >>> 0;
+  const total = (((len + 8) >> 6) + 1) << 6;
+  const m = new Uint8Array(total);
+  m.set(bytes, 0); m[len] = 0x80;
+  const dv = new DataView(m.buffer);
+  dv.setUint32(total - 8, 0); dv.setUint32(total - 4, bitLenLo);
+  let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0;
+  const w = new Int32Array(80);
+  const rol = (x, n) => ((x << n) | (x >>> (32 - n))) >>> 0;
+  for (let i = 0; i < total; i += 64) {
+    for (let t = 0; t < 16; t++) w[t] = dv.getInt32(i + t * 4);
+    for (let t = 16; t < 80; t++) w[t] = rol(w[t - 3] ^ w[t - 8] ^ w[t - 14] ^ w[t - 16], 1);
+    let a = h0, b = h1, c = h2, d = h3, e = h4;
+    for (let t = 0; t < 80; t++) {
+      let f, k;
+      if (t < 20) { f = (b & c) | (~b & d); k = 0x5A827999; }
+      else if (t < 40) { f = b ^ c ^ d; k = 0x6ED9EBA1; }
+      else if (t < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8F1BBCDC; }
+      else { f = b ^ c ^ d; k = 0xCA62C1D6; }
+      const tmp = (rol(a, 5) + f + e + k + w[t]) >>> 0;
+      e = d; d = c; c = rol(b, 30); b = a; a = tmp;
+    }
+    h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0; h4 = (h4 + e) >>> 0;
+  }
+  const out = new Uint8Array(20), od = new DataView(out.buffer);
+  od.setUint32(0, h0); od.setUint32(4, h1); od.setUint32(8, h2); od.setUint32(12, h3); od.setUint32(16, h4);
+  return out;
+}
+function hmacSha1(keyBytes, msgBytes) {
+  const kb = keyBytes.length > 64 ? sha1Bytes(keyBytes) : keyBytes;
+  const ipad = new Uint8Array(64), opad = new Uint8Array(64);
+  for (let i = 0; i < 64; i++) { ipad[i] = (kb[i] || 0) ^ 0x36; opad[i] = (kb[i] || 0) ^ 0x5c; }
+  const inner = new Uint8Array(64 + msgBytes.length);
+  inner.set(ipad); inner.set(msgBytes, 64);
+  const h1 = sha1Bytes(inner);
+  const outer = new Uint8Array(64 + h1.length);
+  outer.set(opad); outer.set(h1, 64);
+  return sha1Bytes(outer);
+}
+function b64(bytes) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let out = '';
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b0 = bytes[i], b1 = i + 1 < bytes.length ? bytes[i + 1] : 0, b2 = i + 2 < bytes.length ? bytes[i + 2] : 0;
+    out += chars[b0 >> 2] + chars[((b0 & 3) << 4) | (b1 >> 4)];
+    out += i + 1 < bytes.length ? chars[((b1 & 15) << 2) | (b2 >> 6)] : '=';
+    out += i + 2 < bytes.length ? chars[b2 & 63] : '=';
+  }
+  return out;
+}
+/* 浏览器无法发送 Date 请求头，OSS 官方 SDK 的做法：发 x-oss-date，签名串里日期位置与规范化头都带它 */
+function ossSign(method, contentType, date, resource) {
+  const hdrs = [];
+  if (cloudToken()) hdrs.push('x-oss-security-token:' + cloudToken());
+  hdrs.push('x-oss-date:' + date);
+  hdrs.sort();
+  const canonicalHeaders = hdrs.join('\n') + '\n';
+  const stringToSign = method + '\n\n' + (contentType || '') + '\n' + date + '\n' + canonicalHeaders + resource;
+  const sig = b64(hmacSha1(utf8(cloudSk()), utf8(stringToSign)));
+  return 'OSS ' + cloudAk() + ':' + sig;
+}
+function ossBase() { return 'https://' + cloud.bucket + '.' + cloud.endpoint; }
+async function ossReq(method, body) {
+  const date = new Date().toUTCString();
+  const key = cloud.key || 'data.json';
+  const resource = '/' + cloud.bucket + '/' + key;
+  const contentType = method === 'PUT' ? 'application/json' : '';
+  const headers = { 'x-oss-date': date, 'Authorization': ossSign(method, contentType, date, resource) };
+  if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+  const opt = { method, headers };
+  if (method === 'PUT') { opt.headers['Content-Type'] = contentType; opt.body = JSON.stringify(body); }
+  return fetch(ossBase() + '/' + key, opt);
+}
+function setCloudState(s, msg) {
+  const el = $('#cloudInd');
+  if (el) {
+    el.className = 'cloud-ind' + (s === 'syncing' ? ' syncing' : s === 'ok' ? ' ok' : s === 'err' ? ' err' : '');
+    el.title = s === 'ok' ? '云端同步正常' : s === 'err' ? '云端同步出错，到设置里检查' : s === 'syncing' ? '正在同步…' : '云端同步未开启';
+  }
+  const st = $('#cloudStatus');
+  if (st) {
+    if (msg) st.textContent = msg;
+    else if (s === 'off') st.textContent = '未开启云端同步';
+    else if (s === 'syncing') st.textContent = '正在与云端同步…';
+    else if (s === 'ok') st.textContent = '同步成功 · 上次同步 ' + (cloud.lastSync || '刚刚');
+    else st.textContent = '同步出错，请检查设置';
+  }
+}
+function refreshCloudStatus() {
+  if (!cloud.enabled) { setCloudState('off', '未开启云端同步'); }
+  else if (!cloud.bucket || !cloud.endpoint) { setCloudState('err', 'Bucket / Endpoint 必填'); }
+  else if (!cloudAk() || !cloudSk()) { setCloudState('err', 'AccessKey 未配置：在文件顶部填 OSS_AK / OSS_SK'); }
+  else setCloudState(cloud.lastSync ? 'ok' : 'off', cloud.lastSync ? '已开启 · 上次同步 ' + cloud.lastSync : '已开启，等待同步…');
+  updateKeyStatus();
+}
+function saveLocal(d) {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(d)); }
+  catch (e) { showToast('保存失败，浏览器存储空间不足'); }
+}
+let cloudTimer = null;
+function scheduleCloudUpload() {
+  if (!cloudOk()) return;
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(() => cloudUpload(false), 1500);
+}
+async function cloudUpload(manual) {
+  if (!cloudOk()) { setCloudState('off'); if (manual) showToast('请先在设置里填写云端配置并开启同步'); return; }
+  setCloudState('syncing', '正在上传…');
+  try {
+    const res = await ossReq('PUT', { couple: data.couple, records: data.records });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
+    saveCloud();
+    setCloudState('ok', '已上传到云端 · ' + cloud.lastSync);
+    if (manual) showToast('已上传到云端');
+  } catch (e) {
+    setCloudState('err', '上传出错：' + e.message);
+    if (manual) showToast('云端上传失败：' + e.message);
+  }
+}
+async function cloudDownload(manual) {
+  if (!cloudOk()) { setCloudState('off'); if (manual) showToast('请先在设置里填写云端配置并开启同步'); return; }
+  setCloudState('syncing', '正在下载…');
+  try {
+    const res = await ossReq('GET');
+    if (res.status === 404) { setCloudState('off', '云端还没有数据，先点「上传到云端」'); if (manual) showToast('云端还没有数据，先上传一份'); return; }
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const remote = await res.json();
+    if (!remote || typeof remote !== 'object' || !remote.records) throw new Error('云端数据格式不对');
+    data.couple = Object.assign({}, data.couple, remote.couple || {});
+    data.records = remote.records || {};
+    saveLocal(data);
+    render();
+    cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
+    saveCloud();
+    setCloudState('ok', '已从云端下载 · ' + cloud.lastSync);
+    if (manual) showToast('已从云端同步最新数据');
+  } catch (e) {
+    setCloudState('err', '下载出错：' + e.message);
+    if (manual) showToast('云端下载失败：' + e.message);
+  }
+}
+function updateKeyStatus() {
+  const el = $('#keyStatus');
+  if (!el) return;
+  const okKey = !!(cloudAk() && cloudSk());
+  el.textContent = okKey ? 'AccessKey 已配置（在文件顶部填写，页面不显示）' : 'AccessKey 未配置：用 VSCode 在文件顶部填 OSS_AK / OSS_SK';
+  el.style.color = okKey ? '#3FA98A' : '#E0618A';
+}
+function fillCloudUI() {
+  $('#cEnabled').checked = !!cloud.enabled;
+  $('#cBucket').value = cloud.bucket; $('#cEndpoint').value = cloud.endpoint;
+  $('#cKey').value = cloud.key || 'data.json';
+  updateKeyStatus();
+}
+function readCloudFields() {
+  cloud.enabled = $('#cEnabled').checked;
+  cloud.bucket = $('#cBucket').value.trim();
+  cloud.endpoint = $('#cEndpoint').value.trim();
+  cloud.key = $('#cKey').value.trim() || 'data.json';
+  saveCloud();
+}
+
+function persist(d) { saveLocal(d); scheduleCloudUpload(); }
+let data = load();
+
+/* ============ 状态 ============ */
+let cur = todayStr();          // 当前查看的日期
+let monthCursor = cur.slice(0, 7) + '-01';
+let view = 'today';
+let whoSel = 'A';
+let moodSel = 'energy';
+
+/* ============ 渲染：顶栏与统计 ============ */
+function render() { renderBadge(); renderStats(); renderDateNav(); renderProgress(); renderRecords(); renderCalendar(); }
+
+function renderBadge() {
+  const n = dayDiff(todayStr(), data.couple.startDate);
+  $('#daysBadge').textContent = n >= 0 ? '在一起 ' + n + ' 天' : '在一起 1 天';
+}
+function renderStats() {
+  const c = data.couple;
+  $('#stDist').textContent = c.cityA + ' ⇄ ' + c.cityB;
+  $('#stDistSub').textContent = c.distance || '来设置距离吧';
+  const md = dayDiff(c.meetDate, todayStr());
+  $('#stMeet').textContent = md > 0 ? '还有 ' + md + ' 天' : (md === 0 ? '就是今天！' : '已经见过啦');
+  $('#stMeetSub').textContent = c.meetDate;
+  const mk = todayStr().slice(0, 7);
+  let monthMin = 0, monthCnt = 0, totMin = 0, totCnt = 0;
+  Object.keys(data.records).forEach(ds => {
+    const recs = data.records[ds];
+    if (!recs || !recs.length) return;
+    const mins = recs.reduce((s, r) => s + (Number(r.minutes) || 0), 0);
+    totMin += mins;
+    const inMonth = ds.slice(0, 7) === mk;
+    if (inMonth) monthMin += mins;
+    const hasA = recs.some(r => r.who === 'A'), hasB = recs.some(r => r.who === 'B');
+    if (hasA && hasB) { totCnt++; if (inMonth) monthCnt++; }
+  });
+  const monthLabel = Number(mk.slice(5)) + ' 月 1 号起';
+  $('#stMonMin').textContent = monthMin ? monthMin.toLocaleString() + ' 分钟' : '0 分钟';
+  $('#stMonMinSub').textContent = monthLabel + ' · 每月 1 号重算';
+  $('#stMonCnt').textContent = monthCnt + ' 天';
+  $('#stMonCntSub').textContent = monthLabel + ' · 两人都学';
+  $('#stTotMin').textContent = totMin ? totMin.toLocaleString() + ' 分钟' : '0 分钟';
+  $('#stTotMinSub').textContent = '从 ' + c.startDate + ' 起累积';
+  $('#stTotCnt').textContent = totCnt + ' 天';
+  $('#stTotCntSub').textContent = '两人都学（全部日期）';
+}
+
+/* ============ 渲染：日期导航 ============ */
+function renderDateNav() {
+  $('#dateD').textContent = dateLabel(cur);
+  $('#dateW').textContent = WEEK[parse(cur).getDay()];
+}
+
+/* ============ 渲染：今日进度 ============ */
+function renderProgress() {
+  const recs = data.records[cur] || [];
+  const sum = who => recs.filter(r => r.who === who).reduce((s, r) => s + (Number(r.minutes) || 0), 0);
+  const a = sum('A'), b = sum('B'), total = a + b, goal = 120;
+  $('#progRow').innerHTML = '<b>' + esc(data.couple.nameA) + '</b> ' + a + ' 分钟 · <b>' + esc(data.couple.nameB) + '</b> ' + b + ' 分钟';
+  $('#progTotal').textContent = total + ' / ' + goal + ' 分钟';
+  $('#progFill').style.width = Math.min(100, total / goal * 100) + '%';
+  $('#progTip').textContent = total === 0 ? '这一天还没有记录，点 + 添加第一条吧' : (total >= goal ? '今天的目标达成啦，好棒！' : '再学一点就到今天的 120 分钟啦');
+}
+
+/* ============ 渲染：学习记录 ============ */
+function entryHTML(r) {
+  return '<div class="entry" data-id="' + r.id + '">' +
+    '<div class="top"><span class="chip">' + esc(r.subject) + '</span>' +
+    (r.sample ? '<span class="sample-tag">示例</span>' : '') +
+    '<span class="tm">' + esc(r.time) + '</span>' +
+    '<button class="del" data-del="' + r.id + '" aria-label="删除这条记录"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
+    (r.content ? '<div class="tx">' + esc(r.content) + '</div>' : '') +
+    '<div class="ft">' + moodSvg(r.mood) + '<span>' + (MOODS[r.mood] ? MOODS[r.mood].n : '平静') + '</span><span class="mini">·</span><span>' + (Number(r.minutes) || 0) + ' 分钟</span></div></div>';
+}
+function colHTML(who) {
+  const he = who === 'B';
+  const name = esc(who === 'A' ? data.couple.nameA : data.couple.nameB);
+  const recs = (data.records[cur] || []).filter(r => r.who === who).sort((x, y) => (y.time || '').localeCompare(x.time || ''));
+  const mins = recs.reduce((s, r) => s + (Number(r.minutes) || 0), 0);
+  let list;
+  if (recs.length) list = recs.map(entryHTML).join('');
+  else list = '<div class="empty"><svg class="i"><use href="#i-book" xlink:href="#i-book"/></svg><p>这一天还没有 ' + name + ' 的学习记录</p><p class="hint">点右上角 + 添加一条</p></div>';
+  return '<div class="pcard' + (he ? ' he' : '') + '"><div class="head">' + MASCOT[who] +
+    '<div><div class="nm">' + name + '</div><div class="tt">今日已学 ' + mins + ' 分钟</div></div>' +
+    '<button class="add" data-add="' + who + '" aria-label="给 ' + name + ' 添加记录"><svg class="i" style="width:19px;height:19px"><use href="#i-plus" xlink:href="#i-plus"/></svg></button></div>' +
+    '<div class="list">' + list + '</div></div>';
+}
+function renderRecords() { $('#recordsBox').innerHTML = colHTML('A') + colHTML('B'); }
+
+/* ============ 渲染：日历 ============ */
+function renderCalendar() {
+  const d = parse(monthCursor), y = d.getFullYear(), m = d.getMonth();
+  $('#calMonth').textContent = y + '年' + (m + 1) + '月';
+  const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
+  const days = new Date(y, m + 1, 0).getDate();
+  let cells = '';
+  for (let i = 0; i < firstDow; i++) cells += '<div class="cal-cell blank"></div>';
+  for (let day = 1; day <= days; day++) {
+    const ds = y + '-' + pad(m + 1) + '-' + pad(day);
+    const recs = data.records[ds] || [];
+    const a = recs.some(r => r.who === 'A'), b = recs.some(r => r.who === 'B');
+    cells += '<button class="cal-cell' + (ds === cur ? ' sel' : '') + (ds === todayStr() ? ' today' : '') + '" data-date="' + ds + '" aria-label="' + ds + ' 的学习记录">' +
+      '<span class="cal-num">' + day + '</span><span class="cal-dots"><i class="dot dot-a' + (a ? ' on' : '') + '"></i><i class="dot dot-b' + (b ? ' on' : '') + '"></i></span></button>';
+  }
+  $('#calGrid').innerHTML = cells;
+  $('#calLegA').textContent = data.couple.nameA;
+  $('#calLegB').textContent = data.couple.nameB;
+}
+
+/* ============ 视图切换 ============ */
+function switchView(v) {
+  view = v === 'calendar' ? 'calendar' : 'today';
+  $('#today').classList.toggle('on', view === 'today');
+  $('#calendar').classList.toggle('on', view === 'calendar');
+  $$('.nav a').forEach(a => a.classList.toggle('on', a.dataset.view === view));
+}
+/* ============ Toast ============ */
+let toastTimer;
+function showToast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2400);
+}
+
+/* ============ 弹窗开关 ============ */
+function openMask(id) { $('#' + id).classList.add('on'); }
+function closeMask(id) { $('#' + id).classList.remove('on'); }
+$$('.mask').forEach(mask => {
+  mask.addEventListener('click', e => { if (e.target === mask) mask.classList.remove('on'); });
+  mask.addEventListener('keydown', e => { if (e.key === 'Escape') mask.classList.remove('on'); });
+});
+$$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeMask(btn.closest('.mask').id)));
+
+/* ============ 添加记录 ============ */
+function setWhoUI() {
+  $('#whoToggle').innerHTML = ['A', 'B'].map(w => {
+    const name = esc(w === 'A' ? data.couple.nameA : data.couple.nameB);
+    return '<button class="who-btn' + (whoSel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-who="' + w + '">' + MASCOT[w] + '<span>' + name + '</span></button>';
+  }).join('');
+  $('#saveAdd').className = 'btn btn-main' + (whoSel === 'B' ? ' he' : '');
+}
+function setMoodUI() {
+  $('#moods').innerHTML = Object.keys(MOODS).map(k =>
+    '<button class="mood-btn' + (moodSel === k ? ' on' : '') + '" data-mood="' + k + '">' + moodSvg(k) + '<span>' + MOODS[k].n + '</span></button>').join('');
+}
+function openAdd(who) {
+  whoSel = who === 'B' ? 'B' : 'A'; moodSel = 'energy';
+  setWhoUI(); setMoodUI();
+  $('#fSubject').value = ''; $('#fContent').value = ''; $('#fMinutes').value = 30;
+  $('#addTitle').textContent = '记录 ' + dateLabel(cur) + ' 的学习';
+  openMask('addMask');
+}
+$('#whoToggle').addEventListener('click', e => {
+  const b = e.target.closest('[data-who]'); if (!b) return;
+  whoSel = b.dataset.who; setWhoUI();
+});
+$('#moods').addEventListener('click', e => {
+  const b = e.target.closest('[data-mood]'); if (!b) return;
+  moodSel = b.dataset.mood; setMoodUI();
+});
+$('#saveAdd').addEventListener('click', () => {
+  const subject = $('#fSubject').value.trim();
+  if (!subject) { showToast('先给今天的学习起个名字呀（科目）'); return; }
+  const content = $('#fContent').value.trim();
+  const minutes = Math.max(0, Math.round(Number($('#fMinutes').value) || 0));
+  const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
+  const rec = { id: 'r' + Date.now() + Math.random().toString(36).slice(2, 6), date: cur, who: whoSel, subject, content, minutes, mood: moodSel, time: hh + ':' + mm, sample: false };
+  (data.records[cur] = data.records[cur] || []).push(rec);
+  persist(data);
+  closeMask('addMask');
+  render();
+  showToast('已保存到 ' + dateLabel(cur) + '，一起加油呀');
+});
+
+/* ============ 添加与删除记录 ============ */
+$('#recordsBox').addEventListener('click', e => {
+  const add = e.target.closest('[data-add]');
+  if (add) { openAdd(add.dataset.add); return; }
+  const del = e.target.closest('[data-del]');
+  if (!del) return;
+  if (!confirm('要删除这条记录吗？')) return;
+  const list = data.records[cur] || [];
+  data.records[cur] = list.filter(r => r.id !== del.dataset.del);
+  if (!data.records[cur].length) delete data.records[cur];
+  persist(data); render();
+  showToast('已删除');
+});
+
+/* ============ 日期导航 ============ */
+$('#prevDay').addEventListener('click', () => { cur = addDays(cur, -1); render(); });
+$('#nextDay').addEventListener('click', () => { cur = addDays(cur, 1); render(); });
+$('#todayBtn').addEventListener('click', () => { cur = todayStr(); render(); });
+
+/* ============ 日历交互 ============ */
+$('#calPrev').addEventListener('click', () => {
+  const d = parse(monthCursor); monthCursor = fmt(new Date(d.getFullYear(), d.getMonth() - 1, 1)); renderCalendar();
+});
+$('#calNext').addEventListener('click', () => {
+  const d = parse(monthCursor); monthCursor = fmt(new Date(d.getFullYear(), d.getMonth() + 1, 1)); renderCalendar();
+});
+$('#calToday').addEventListener('click', () => { monthCursor = todayStr().slice(0, 7) + '-01'; cur = todayStr(); switchView('today'); render(); });
+$('#calGrid').addEventListener('click', e => {
+  const b = e.target.closest('[data-date]'); if (!b) return;
+  cur = b.dataset.date;
+  switchView('today');
+  render();
+});
+
+/* ============ 设置 ============ */
+$('#openSettings').addEventListener('click', () => {
+  const c = data.couple;
+  $('#sNameA').value = c.nameA; $('#sNameB').value = c.nameB;
+  $('#sCityA').value = c.cityA; $('#sCityB').value = c.cityB;
+  $('#sDist').value = c.distance;
+  $('#sStart').value = c.startDate; $('#sMeet').value = c.meetDate;
+  distHintText();
+  fillCloudUI();
+  refreshCloudStatus();
+  openMask('setMask');
+});
+$('#sCityA').addEventListener('input', distHintText);
+$('#sCityB').addEventListener('input', distHintText);
+$('#saveSettings').addEventListener('click', () => {
+  const g = s => $(s).value.trim();
+  const nameA = g('#sNameA') || '兔兔', nameB = g('#sNameB') || '熊熊';
+  const cityA = g('#sCityA') || '城市A', cityB = g('#sCityB') || '城市B';
+  const auto = cityDist(cityA, cityB);
+  const distance = auto !== null ? auto + ' km' : (g('#sDist') || '来设置距离吧');
+  data.couple = {
+    nameA, nameB,
+    cityA, cityB,
+    distance,
+    startDate: $('#sStart').value || data.couple.startDate,
+    meetDate: $('#sMeet').value || data.couple.meetDate
+  };
+  readCloudFields();
+  persist(data); closeMask('setMask'); render();
+  refreshCloudStatus();
+  showToast('设置已保存，小窝又温馨了一点');
+});
+$('#cEnabled').addEventListener('change', () => { cloud.enabled = $('#cEnabled').checked; saveCloud(); refreshCloudStatus(); });
+$('#cloudUploadBtn').addEventListener('click', () => { readCloudFields(); cloudUpload(true); });
+$('#cloudDownloadBtn').addEventListener('click', () => { readCloudFields(); cloudDownload(true); });
+$('#clearRecords').addEventListener('click', () => {
+  if (!confirm('确定清空所有学习记录吗？此操作不可恢复。')) return;
+  data.records = {}; persist(data); render();
+  showToast('已清空，从今天开始重新记录吧');
+});
+
+/* ============ 视图切换 & 初始化 ============ */
+window.addEventListener('hashchange', () => {
+  const v = location.hash.replace('#', '');
+  switchView(v === 'calendar' ? 'calendar' : 'today');
+});
+switchView(location.hash.includes('calendar') ? 'calendar' : 'today');
+render();
+refreshCloudStatus();
+if (cloudOk()) cloudDownload(false);
+
+
+</script>
+</body>
+</html>
