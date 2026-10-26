@@ -55,11 +55,6 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .nav a.on{background:#fff;color:var(--pink-deep);box-shadow:0 3px 8px rgba(255,139,167,.25)}
 .days-badge{display:flex;align-items:center;gap:6px;background:#FFF4D6;border:1.5px dashed #F4C95D;color:#B98A1E;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap;flex:none}
 .days-badge .i{color:#F0A73E}
-.cloud-ind{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:12px;background:#F3ECF0;color:#B9AEC0;flex:none;transition:.3s}
-.cloud-ind.syncing{background:#FFF4D6;color:#E0A73E;animation:cpulse 1.2s ease infinite}
-.cloud-ind.ok{background:#E4F6EE;color:#3FA98A}
-.cloud-ind.err{background:#FFE9E9;color:#E0618A}
-@keyframes cpulse{50%{opacity:.5}}
 
 /* ============ 统计卡片 ============ */
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
@@ -161,6 +156,32 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .section.on{display:block}
 .foot{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:34px;line-height:1.9}
 
+/* ============ 备忘录 & 心里话 ============ */
+.notes-note{margin:4px 4px 0;font-size:12px;color:var(--ink-soft)}
+.wall{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.memo-date{font-family:var(--font-display);font-size:14px;color:var(--pink-deep);margin:6px 2px 2px}
+.memo-card{background:#FFFBE9;border:1.5px solid #F6E7A8;border-radius:16px;padding:12px 14px;box-shadow:0 4px 12px rgba(244,201,93,.14)}
+.memo-card.he{background:#F0FAF6;border-color:#BDEAD8;box-shadow:0 4px 12px rgba(127,212,184,.14)}
+.memo-card .top{display:flex;align-items:center;gap:8px}
+.memo-card .chip{font-size:12px;font-weight:700;background:#F4C45C;color:#fff;padding:3px 11px;border-radius:999px;flex:none}
+.memo-card.he .chip{background:var(--mint)}
+.memo-card .tm{font-size:11px;color:var(--ink-soft);margin-left:auto;flex:none}
+.memo-card .del{color:#CEBCC1;padding:4px;border-radius:8px;flex:none;transition:.2s}
+.memo-card .del:hover{color:#E0618A;background:#FFF1E5}
+.memo-card .tx{font-size:14px;margin-top:8px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.note-card{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--pink)}
+.note-card.he{border-top-color:var(--mint)}
+.note-card .mascot{width:44px;height:44px;flex:none}
+.note-card .bd{flex:1;min-width:0}
+.note-card .meta{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-soft)}
+.note-card .meta b{font-family:var(--font-display);font-size:14px;color:var(--ink)}
+.note-card .meta .tm{flex:1}
+.note-card .del{color:#CEBCC1;padding:4px;border-radius:8px;flex:none;transition:.2s}
+.note-card .del:hover{color:#E0618A;background:#FFE9F0}
+.note-card .tx{font-size:14px;margin-top:8px;line-height:1.8;white-space:pre-wrap;word-break:break-word;background:#FFF7FA;border-radius:14px;padding:10px 12px}
+.note-card.he .tx{background:#F1FAF7}
+@media(max-width:860px){.nav a{padding:8px 12px;font-size:13px}}
+
 /* ============ 弹窗 ============ */
 .mask{position:fixed;inset:0;background:rgba(89,72,78,.38);backdrop-filter:blur(3px);display:none;align-items:flex-end;justify-content:center;z-index:50;padding:0}
 .mask.on{display:flex}
@@ -251,9 +272,10 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
     <nav class="nav">
       <a href="#today" data-view="today">今日</a>
       <a href="#calendar" data-view="calendar">日历</a>
+      <a href="#memo" data-view="memo">备忘录</a>
+      <a href="#notes" data-view="notes">心里话</a>
     </nav>
     <div class="days-badge"><svg class="i" style="width:15px;height:15px"><use href="#i-heart" xlink:href="#i-heart"/></svg><span id="daysBadge">在一起 1 天</span></div>
-    <div class="cloud-ind" id="cloudInd" title="云端同步：未开启"><svg class="i" style="width:16px;height:16px"><use href="#i-cloud" xlink:href="#i-cloud"/></svg></div>
   </header>
 
   <!-- ===== 统计卡片 ===== -->
@@ -312,6 +334,25 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
     </div>
   </section>
 
+  <!-- ===== 视图：备忘录 ===== -->
+  <section class="section" id="memo">
+    <div class="sec-h">
+      <span class="t">备忘录</span>
+      <button class="edit" id="openMemo"><svg class="i" style="width:15px;height:15px"><use href="#i-plus" xlink:href="#i-plus"/></svg>写一张纸条</button>
+    </div>
+    <div class="notes-note">给对方留的小纸条：提醒、心愿、想一起做的事，都贴在这里</div>
+    <div class="wall" id="memoBox"></div>
+  </section>
+
+  <!-- ===== 视图：心里话 ===== -->
+  <section class="section" id="notes">
+    <div class="sec-h">
+      <span class="t">我想对你说的心里话</span>
+      <button class="edit" id="openNote"><svg class="i" style="width:15px;height:15px"><use href="#i-plus" xlink:href="#i-plus"/></svg>说句心里话</button>
+    </div>
+    <div class="wall" id="noteBox"></div>
+  </section>
+
   <footer class="foot">
     小提示：记录保存在本机浏览器的 localStorage 里；在设置里开启「云端同步」后，会自动保存到你们的阿里云 OSS<br>
     云端一份整包快照：先下载、再修改、再上传，两个人就可以随时共享
@@ -333,6 +374,38 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
     <div class="modal-ft">
       <button class="btn btn-ghost" data-close>再想想</button>
       <button class="btn btn-main" id="saveAdd">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 写备忘录弹窗 ===== -->
+<div class="mask" id="memoMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memoTitle">
+    <div class="modal-top">
+      <h3 id="memoTitle">写一张纸条</h3>
+      <button class="x" data-close aria-label="关闭"><svg class="i"><use href="#i-close" xlink:href="#i-close"/></svg></button>
+    </div>
+    <div class="field"><label>谁写的</label><div class="who-toggle" id="memoWhoToggle"></div></div>
+    <div class="field"><label>纸条内容</label><textarea id="memoContent" maxlength="120" placeholder="比如：记得喝水呀、周三交论文、周末想去看电影…"></textarea></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" data-close>再想想</button>
+      <button class="btn btn-main" id="saveMemo">贴上去</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 心里话弹窗 ===== -->
+<div class="mask" id="noteMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="noteTitle">
+    <div class="modal-top">
+      <h3 id="noteTitle">说句心里话</h3>
+      <button class="x" data-close aria-label="关闭"><svg class="i"><use href="#i-close" xlink:href="#i-close"/></svg></button>
+    </div>
+    <div class="field"><label>谁说的</label><div class="who-toggle" id="noteWhoToggle"></div></div>
+    <div class="field"><label>心里话</label><textarea id="noteContent" maxlength="200" placeholder="把想对 TA 说的话写在这里…"></textarea></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" data-close>再想想</button>
+      <button class="btn btn-main" id="saveNote">寄出去</button>
     </div>
   </div>
 </div>
@@ -421,6 +494,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.6 17.6 19 19M19 5l-1.4 1.4M6.4 17.6 5 19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
   <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3.5l1.7 4.3 4.3 1.7-4.3 1.7L12 15.5l-1.7-4.3L6 9.5l4.3-1.7z" fill="currentColor" stroke="none"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z" fill="currentColor" stroke="none"/></symbol>
   <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.2 18.5H9a6.5 6.5 0 1 1 6.2-8.6A5.2 5.2 0 0 1 17.2 18.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 13.5v-3M10.3 12.2 12 10.5l1.7 1.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 12.5h8M8 16h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 5.5h16a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 7.5 12 14l9-6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
 </svg>
 
 <script>
@@ -522,11 +597,21 @@ function defaults() {
   const t = todayStr();
   return {
     couple: { nameA: '兔兔', nameB: '熊熊', cityA: '成都', cityB: '北京', distance: '1525 km', startDate: '2026-10-07', meetDate: addDays(t, 30) },
-    records: {}
+    records: {},
+    memos: [],
+    notes: []
   };
 }
 function load() {
-  try { const raw = localStorage.getItem(LS_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      d.memos = Array.isArray(d.memos) ? d.memos : [];
+      d.notes = Array.isArray(d.notes) ? d.notes : [];
+      return d;
+    }
+  } catch (e) {}
   const d = defaults(); persist(d); return d;
 }
 
@@ -537,10 +622,10 @@ function load() {
  * AccessKey ID 随时可见；Secret 只在创建时显示一次，忘记后无法查看，需重新创建。
  * 建议创建 RAM 子账号 Key，只授权本 Bucket 的读写权限，不要用主账号 Key。
  */
-const OSS_AK = 'LTAI5t6Fu2HJXDPRvJmtykUn';      // ← 把 AccessKey ID 填在这里，例如 'LTAI5tXXXXXXXX'
-const OSS_SK = 'FSEVnlAI5WZCGVlYBlJpBZK4M81Jl8';      // ← 把 AccessKey Secret 填在这里
+const OSS_AK = 'LTAI5tAWo3kCo8YyoQVDKoef';      // ← 把 AccessKey ID 填在这里，例如 'LTAI5tXXXXXXXX'
+const OSS_SK = 'nVrIPk1UOz5jLCy5pyJsfEGXDcUrzG';      // ← 把 AccessKey Secret 填在这里
 const OSS_TOKEN = '';   // ← 使用 STS 临时凭证才填，RAM 永久 Key 留空
-const CLOUD_KEY = 'qlp-couple-cloud-v1';
+const CLOUD_KEY = 'qlp-couple-LTAcloud-v1';
 function loadCloud() {
   try { const raw = localStorage.getItem(CLOUD_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
   return { enabled: false, bucket: 'our-love-nest', endpoint: 'oss-cn-beijing.aliyuncs.com', key: 'data.json', lastSync: '' };
@@ -669,7 +754,7 @@ async function cloudUpload(manual) {
   if (!cloudOk()) { setCloudState('off'); if (manual) showToast('请先在设置里填写云端配置并开启同步'); return; }
   setCloudState('syncing', '正在上传…');
   try {
-    const res = await ossReq('PUT', { couple: data.couple, records: data.records });
+    const res = await ossReq('PUT', { couple: data.couple, records: data.records, memos: data.memos, notes: data.notes });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
     saveCloud();
@@ -691,6 +776,8 @@ async function cloudDownload(manual) {
     if (!remote || typeof remote !== 'object' || !remote.records) throw new Error('云端数据格式不对');
     data.couple = Object.assign({}, data.couple, remote.couple || {});
     data.records = remote.records || {};
+    data.memos = Array.isArray(remote.memos) ? remote.memos : (data.memos || []);
+    data.notes = Array.isArray(remote.notes) ? remote.notes : (data.notes || []);
     saveLocal(data);
     render();
     cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
@@ -732,9 +819,11 @@ let monthCursor = cur.slice(0, 7) + '-01';
 let view = 'today';
 let whoSel = 'A';
 let moodSel = 'energy';
+let memoWho = 'A';
+let noteWho = 'A';
 
 /* ============ 渲染：顶栏与统计 ============ */
-function render() { renderBadge(); renderStats(); renderDateNav(); renderProgress(); renderRecords(); renderCalendar(); }
+function render() { renderBadge(); renderStats(); renderDateNav(); renderProgress(); renderRecords(); renderCalendar(); renderMemo(); renderNotes(); }
 
 function renderBadge() {
   const n = dayDiff(todayStr(), data.couple.startDate);
@@ -833,10 +922,10 @@ function renderCalendar() {
 }
 
 /* ============ 视图切换 ============ */
+const VIEWS = ['today', 'calendar', 'memo', 'notes'];
 function switchView(v) {
-  view = v === 'calendar' ? 'calendar' : 'today';
-  $('#today').classList.toggle('on', view === 'today');
-  $('#calendar').classList.toggle('on', view === 'calendar');
+  view = VIEWS.includes(v) ? v : 'today';
+  VIEWS.forEach(id => $('#' + id).classList.toggle('on', id === view));
   $$('.nav a').forEach(a => a.classList.toggle('on', a.dataset.view === view));
 }
 /* ============ Toast ============ */
@@ -974,12 +1063,116 @@ $('#clearRecords').addEventListener('click', () => {
   showToast('已清空，从今天开始重新记录吧');
 });
 
+/* ============ 渲染：备忘录 ============ */
+function memoItemHTML(m) {
+  const he = m.who === 'B';
+  const name = esc(m.who === 'A' ? data.couple.nameA : data.couple.nameB);
+  return '<div class="memo-card' + (he ? ' he' : '') + '">' +
+    '<div class="top"><span class="chip">' + name + '</span><span class="tm">' + esc(m.time) + '</span>' +
+    '<button class="del" data-mdel="' + m.id + '" aria-label="删除这张纸条"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
+    '<div class="tx">' + esc(m.content) + '</div></div>';
+}
+function renderMemo() {
+  const list = (data.memos || []).slice().sort((a, b) => b.date.localeCompare(a.date) || (b.time || '').localeCompare(a.time || ''));
+  if (!list.length) {
+    $('#memoBox').innerHTML = '<div class="empty"><svg class="i" style="width:44px;height:44px;color:#FFC4D6"><use href="#i-note" xlink:href="#i-note"/></svg><p>还没有小纸条</p><p class="hint">点右上角「写一张纸条」，把想提醒 TA 的事记下来</p></div>';
+    return;
+  }
+  let html = '', lastDate = '';
+  list.forEach(m => {
+    if (m.date !== lastDate) { lastDate = m.date; html += '<div class="memo-date">' + dateLabel(m.date) + '</div>'; }
+    html += memoItemHTML(m);
+  });
+  $('#memoBox').innerHTML = html;
+}
+
+/* ============ 渲染：心里话 ============ */
+function noteCardHTML(n) {
+  const he = n.who === 'B';
+  const name = esc(n.who === 'A' ? data.couple.nameA : data.couple.nameB);
+  return '<div class="note-card' + (he ? ' he' : '') + '">' + MASCOT[n.who] +
+    '<div class="bd"><div class="meta"><b>' + name + '</b><span class="tm">' + dateLabel(n.date) + ' ' + esc(n.time) + '</span>' +
+    '<button class="del" data-ndel="' + n.id + '" aria-label="删除这条心里话"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
+    '<div class="tx">' + esc(n.content) + '</div></div></div>';
+}
+function renderNotes() {
+  const list = (data.notes || []).slice().sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
+  if (!list.length) {
+    $('#noteBox').innerHTML = '<div class="empty"><svg class="i" style="width:44px;height:44px;color:#FFC4D6"><use href="#i-mail" xlink:href="#i-mail"/></svg><p>还没有心里话</p><p class="hint">点右上角「说句心里话」，把藏在心里的话寄给 TA</p></div>';
+    return;
+  }
+  $('#noteBox').innerHTML = list.map(noteCardHTML).join('');
+}
+
+/* ============ 备忘录 & 心里话：交互 ============ */
+function renderWhoToggle(boxId, sel) {
+  const box = $(boxId); if (!box) return;
+  box.innerHTML = ['A', 'B'].map(w => {
+    const name = esc(w === 'A' ? data.couple.nameA : data.couple.nameB);
+    return '<button class="who-btn' + (sel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-ww="' + w + '" data-box="' + boxId + '">' + MASCOT[w] + '<span>' + name + '</span></button>';
+  }).join('');
+}
+$$('.who-toggle').forEach(box => box.addEventListener('click', e => {
+  const b = e.target.closest('[data-ww]'); if (!b) return;
+  const boxId = b.dataset.box;
+  if (boxId === 'memoWhoToggle') { memoWho = b.dataset.ww; renderWhoToggle(boxId, memoWho); }
+  else if (boxId === 'noteWhoToggle') { noteWho = b.dataset.ww; renderWhoToggle(boxId, noteWho); }
+  const saveBtn = boxId === 'memoWhoToggle' ? $('#saveMemo') : $('#saveNote');
+  if (saveBtn) saveBtn.className = 'btn btn-main' + (b.dataset.ww === 'B' ? ' he' : '');
+}));
+function openMemo() {
+  memoWho = 'A'; renderWhoToggle('#memoWhoToggle', memoWho);
+  $('#memoContent').value = '';
+  $('#saveMemo').className = 'btn btn-main';
+  openMask('memoMask');
+}
+function openNote() {
+  noteWho = 'A'; renderWhoToggle('#noteWhoToggle', noteWho);
+  $('#noteContent').value = '';
+  $('#saveNote').className = 'btn btn-main';
+  openMask('noteMask');
+}
+$('#openMemo').addEventListener('click', openMemo);
+$('#openNote').addEventListener('click', openNote);
+$('#saveMemo').addEventListener('click', () => {
+  const content = $('#memoContent').value.trim();
+  if (!content) { showToast('先写点内容呀'); return; }
+  const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
+  data.memos = data.memos || [];
+  data.memos.push({ id: 'm' + Date.now() + Math.random().toString(36).slice(2, 6), date: todayStr(), who: memoWho, content, time: hh + ':' + mm });
+  persist(data); closeMask('memoMask'); render();
+  showToast('纸条贴好啦，TA 会看到的');
+});
+$('#saveNote').addEventListener('click', () => {
+  const content = $('#noteContent').value.trim();
+  if (!content) { showToast('先写一句心里话呀'); return; }
+  const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
+  data.notes = data.notes || [];
+  data.notes.push({ id: 'n' + Date.now() + Math.random().toString(36).slice(2, 6), date: todayStr(), who: noteWho, content, time: hh + ':' + mm });
+  persist(data); closeMask('noteMask'); render();
+  showToast('心里话寄出去啦');
+});
+$('#memoBox').addEventListener('click', e => {
+  const b = e.target.closest('[data-mdel]'); if (!b) return;
+  if (!confirm('要撕掉这张纸条吗？')) return;
+  data.memos = (data.memos || []).filter(m => m.id !== b.dataset.mdel);
+  persist(data); render();
+  showToast('纸条已撕掉');
+});
+$('#noteBox').addEventListener('click', e => {
+  const b = e.target.closest('[data-ndel]'); if (!b) return;
+  if (!confirm('要删掉这条心里话吗？')) return;
+  data.notes = (data.notes || []).filter(n => n.id !== b.dataset.ndel);
+  persist(data); render();
+  showToast('已删除');
+});
+
 /* ============ 视图切换 & 初始化 ============ */
 window.addEventListener('hashchange', () => {
   const v = location.hash.replace('#', '');
-  switchView(v === 'calendar' ? 'calendar' : 'today');
+  switchView(VIEWS.includes(v) ? v : 'today');
 });
-switchView(location.hash.includes('calendar') ? 'calendar' : 'today');
+switchView(VIEWS.includes(location.hash.replace('#', '')) ? location.hash.replace('#', '') : 'today');
 render();
 refreshCloudStatus();
 if (cloudOk()) cloudDownload(false);
