@@ -206,6 +206,25 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .photo-prev .ph{position:relative;flex:none}
 .photo-prev img{width:66px;height:66px;object-fit:cover;border-radius:12px;display:block}
 .photo-prev .rm{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#E0618A;color:#fff;font-size:12px;line-height:20px;text-align:center;padding:0}
+
+/* ============ 心里话：回复 ============ */
+.reply-bar{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--ink-soft)}
+.reply-bar .rlb{font-weight:700}
+.reply-bar .who-toggle{margin:0;background:#FFF0F4;padding:2px;border-radius:999px}
+.reply-bar .who-toggle .who-btn{font-size:11px;padding:4px 12px}
+.replies{margin-top:10px;display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#FBF7F3;border-radius:14px}
+.note-card.he .replies{background:#F3FAF7}
+.replies .nrep{font-size:13px;line-height:1.6;word-break:break-word;display:flex;flex-wrap:wrap;gap:2px 8px}
+.replies .nrep .nrep-who{font-family:var(--font-display);color:var(--pink-deep);flex:none}
+.replies .nrep.he .nrep-who{color:#3FA98A}
+.replies .nrep .nrep-tx{flex:1 1 auto;min-width:0;color:var(--ink)}
+.replies .nrep .nrep-tm{font-size:11px;color:#C4B8BC;flex:none}
+.nrep-row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.nrep-row input{flex:1;min-width:0;border:1.5px solid #F3D8E2;background:#fff;border-radius:999px;padding:8px 14px;font-size:16px;color:var(--ink);outline:none;transition:.2s}
+.nrep-row input:focus{border-color:#FF8BA7}
+.nrep-row .nrep-send{flex:none;background:var(--pink);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:999px;padding:8px 16px;cursor:pointer;transition:.2s}
+.note-card.he .nrep-row .nrep-send{background:var(--mint)}
+.nrep-row .nrep-send:hover{filter:brightness(.95)}
 .note-card{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--pink)}
 .note-card.he{border-top-color:var(--mint)}
 .note-card .mascot{width:44px;height:44px;flex:none}
@@ -389,6 +408,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <span class="t">我想对你说的心里话</span>
       <button class="edit" id="openNote"><svg class="i" style="width:15px;height:15px"><use href="#i-plus" xlink:href="#i-plus"/></svg>说句心里话</button>
     </div>
+    <div class="reply-bar"><span class="rlb">回复身份</span><div class="who-toggle" id="noteReplyWhoToggle"></div></div>
     <div class="wall" id="noteBox"></div>
   </section>
 
@@ -469,7 +489,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
     </div>
     <div class="field"><label>谁发的</label><div class="who-toggle" id="momentWhoToggle"></div></div>
     <div class="field"><label>想说的话</label><textarea id="momentContent" maxlength="300" placeholder="记录这一刻的心情…"></textarea></div>
-    <div class="field"><label>添加照片（可多选，最多 9 张，自动上传到云端）</label>
+    <div class="field"><label>添加照片（可多选，最多 9 张，原图上传不压缩，GIF 动图保持动图）</label>
       <label class="photo-pick"><svg class="i" style="width:18px;height:18px"><use href="#i-camera" xlink:href="#i-camera"/></svg>选择照片<input type="file" id="momentFiles" accept="image/*" multiple hidden></label>
       <div class="photo-prev" id="momentPrev"></div>
       <div class="hint-txt" id="momentUploadHint"></div>
@@ -801,6 +821,14 @@ async function ossPutObject(key, body, contentType) {
   if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
   return fetch(ossBase() + '/' + key, { method: 'PUT', headers, body });
 }
+/* 删除 OSS 上的对象（瞬间照片等） */
+async function ossDeleteObject(key) {
+  const date = new Date().toUTCString();
+  const resource = '/' + cloud.bucket + '/' + key;
+  const headers = { 'x-oss-date': date, 'Authorization': ossSign('DELETE', '', date, resource) };
+  if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+  return fetch(ossBase() + '/' + key, { method: 'DELETE', headers });
+}
 function setCloudState(s, msg) {
   const el = $('#cloudInd');
   if (el) {
@@ -906,6 +934,7 @@ let moodSel = 'energy';
 let memoWho = 'A';
 let noteWho = 'A';
 let momentWho = 'A';
+let replyWho = 'A';
 let momentFiles = [];
 
 /* ============ 渲染：顶栏与统计 ============ */
@@ -1198,10 +1227,18 @@ function renderMemo() {
 function noteCardHTML(n) {
   const he = n.who === 'B';
   const name = esc(n.who === 'A' ? data.couple.nameA : data.couple.nameB);
+  const replies = (n.replies || []).map(r => {
+    const rh = r.who === 'B';
+    const rn = esc(r.who === 'A' ? data.couple.nameA : data.couple.nameB);
+    return '<div class="nrep' + (rh ? ' he' : '') + '"><b class="nrep-who">' + rn + '</b><span class="nrep-tx">' + esc(r.content) + '</span>' +
+      '<span class="nrep-tm">' + dateLabel(r.date) + ' ' + esc(r.time || '') + '</span></div>';
+  }).join('');
+  const repl = replies ? '<div class="replies">' + replies + '</div>' : '';
   return '<div class="note-card' + (he ? ' he' : '') + '">' + MASCOT[n.who] +
     '<div class="bd"><div class="meta"><b>' + name + '</b><span class="tm">' + dateLabel(n.date) + ' ' + esc(n.time) + '</span>' +
     '<button class="del" data-ndel="' + n.id + '" aria-label="删除这条心里话"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
-    '<div class="tx">' + esc(n.content) + '</div></div></div>';
+    '<div class="tx">' + esc(n.content) + '</div>' + repl +
+    '<div class="nrep-row"><input type="text" maxlength="100" placeholder="回复 ' + name + '…"><button class="nrep-send" data-nreply="' + n.id + '">回复</button></div></div></div>';
 }
 function renderNotes() {
   const list = (data.notes || []).slice().sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
@@ -1226,7 +1263,8 @@ $$('.who-toggle').forEach(box => box.addEventListener('click', e => {
   if (boxId === 'memoWhoToggle') { memoWho = b.dataset.ww; renderWhoToggle(boxId, memoWho); }
   else if (boxId === 'noteWhoToggle') { noteWho = b.dataset.ww; renderWhoToggle(boxId, noteWho); }
   else if (boxId === 'momentWhoToggle') { momentWho = b.dataset.ww; renderWhoToggle(boxId, momentWho); }
-  const saveBtn = boxId === 'memoWhoToggle' ? $('#saveMemo') : (boxId === 'noteWhoToggle' ? $('#saveNote') : $('#saveMoment'));
+  else if (boxId === 'noteReplyWhoToggle') { replyWho = b.dataset.ww; renderWhoToggle(boxId, replyWho); }
+  const saveBtn = boxId === 'memoWhoToggle' ? $('#saveMemo') : (boxId === 'noteWhoToggle' ? $('#saveNote') : (boxId === 'momentWhoToggle' ? $('#saveMoment') : null));
   if (saveBtn) saveBtn.className = 'btn btn-main' + (b.dataset.ww === 'B' ? ' he' : '');
 }));
 function openMemo() {
@@ -1272,11 +1310,28 @@ $('#memoBox').addEventListener('click', e => {
   showToast('纸条已撕掉');
 });
 $('#noteBox').addEventListener('click', e => {
-  const b = e.target.closest('[data-ndel]'); if (!b) return;
-  if (!confirm('要删掉这条心里话吗？')) return;
-  data.notes = (data.notes || []).filter(n => n.id !== b.dataset.ndel);
-  persist(data); render();
-  showToast('已删除');
+  const b = e.target.closest('[data-ndel]');
+  if (b) {
+    if (!confirm('要删掉这条心里话吗？')) return;
+    data.notes = (data.notes || []).filter(n => n.id !== b.dataset.ndel);
+    persist(data); render();
+    showToast('已删除');
+    return;
+  }
+  const rb = e.target.closest('[data-nreply]');
+  if (rb) {
+    const card = rb.closest('.note-card');
+    const input = card.querySelector('.nrep-row input');
+    const content = (input.value || '').trim();
+    if (!content) { showToast('先写点回复内容呀'); return; }
+    const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
+    const note = (data.notes || []).find(x => x.id === rb.dataset.nreply);
+    if (!note) return;
+    note.replies = note.replies || [];
+    note.replies.push({ who: replyWho, content, date: todayStr(), time: hh + ':' + mm });
+    persist(data); render();
+    showToast('回复已送达');
+  }
 });
 
 /* ============ 渲染：瞬间 ============ */
@@ -1303,28 +1358,22 @@ function renderMoments() {
   $('#momentBox').innerHTML = list.map(renderMomentCard).join('');
 }
 
-/* ============ 瞬间：照片处理与发布 ============ */
-function compressImage(file, maxEdge, quality) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.naturalWidth, h = img.naturalHeight;
-        if (!w || !h) { reject(new Error('图片尺寸异常')); return; }
-        const scale = Math.min(1, maxEdge / Math.max(w, h));
-        w = Math.round(w * scale); h = Math.round(h * scale);
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        canvas.toBlob(b => (b ? resolve(b) : reject(new Error('压缩失败'))), 'image/jpeg', quality);
-      };
-      img.onerror = () => reject(new Error('图片读取失败'));
-      img.src = e.target.result;
-    };
-    reader.onerror = () => reject(new Error('文件读取失败'));
-    reader.readAsDataURL(file);
-  });
+/* ============ 瞬间：照片处理与发布（原图上传，不压缩） ============ */
+function photoType(file) {
+  const t = (file.type || '').toLowerCase();
+  if (t) return t;
+  const n = (file.name || '').toLowerCase();
+  if (n.endsWith('.gif')) return 'image/gif';
+  if (n.endsWith('.png')) return 'image/png';
+  if (n.endsWith('.webp')) return 'image/webp';
+  if (n.endsWith('.jpg') || n.endsWith('.jpeg')) return 'image/jpeg';
+  if (n.endsWith('.bmp')) return 'image/bmp';
+  if (n.endsWith('.avif')) return 'image/avif';
+  return 'image/jpeg';
+}
+function photoExt(type) {
+  const m = { 'image/gif': 'gif', 'image/png': 'png', 'image/webp': 'webp', 'image/jpeg': 'jpg', 'image/bmp': 'bmp', 'image/avif': 'avif' };
+  return m[type] || 'jpg';
 }
 function blobToDataUrl(blob) {
   return new Promise((resolve, reject) => {
@@ -1334,11 +1383,12 @@ function blobToDataUrl(blob) {
     r.readAsDataURL(blob);
   });
 }
-async function uploadMomentPhotos(momentId, blobs) {
+async function uploadMomentPhotos(momentId, files) {
   const urls = [];
-  for (let i = 0; i < blobs.length; i++) {
-    const key = 'moments/' + momentId + '/' + (i + 1) + '.jpg';
-    const res = await ossPutObject(key, blobs[i], 'image/jpeg');
+  for (let i = 0; i < files.length; i++) {
+    const type = photoType(files[i]);
+    const key = 'moments/' + momentId + '/' + (i + 1) + '.' + photoExt(type);
+    const res = await ossPutObject(key, files[i], type);
     if (!res.ok) throw new Error('照片 ' + (i + 1) + ' 上传失败 HTTP ' + res.status);
     urls.push(ossBase() + '/' + key);
   }
@@ -1348,8 +1398,8 @@ function renderMomentPrev() {
   $('#momentPrev').innerHTML = momentFiles.map((f, i) =>
     '<div class="ph"><img src="' + f.dataUrl + '" alt="预览"><button class="rm" data-rm="' + i + '" aria-label="移除这张照片">×</button></div>').join('');
   $('#momentUploadHint').textContent = momentFiles.length
-    ? '已选 ' + momentFiles.length + ' 张照片（发布后按顺序逐张展示）'
-    : (cloudOk() ? '' : '云端同步未开启：照片将压缩后保存在本机，开启云端后请重新发布');
+    ? '已选 ' + momentFiles.length + ' 张照片（原图上传不压缩，GIF 动图保持动图）'
+    : (cloudOk() ? '' : '云端同步未开启：照片将原样保存在本机（可能占用较大空间），建议开启云端');
 }
 function openMoment() {
   momentWho = 'A';
@@ -1390,12 +1440,9 @@ $('#saveMoment').addEventListener('click', async () => {
   try {
     let photos = [];
     if (momentFiles.length) {
-      const maxEdge = cloudOk() ? 1280 : 720;
-      const blobs = [];
-      for (const f of momentFiles) blobs.push(await compressImage(f.file, maxEdge, cloudOk() ? 0.85 : 0.7));
       photos = cloudOk()
-        ? await uploadMomentPhotos(id, blobs)
-        : await Promise.all(blobs.map(blobToDataUrl));
+        ? await uploadMomentPhotos(id, momentFiles.map(f => f.file))
+        : await Promise.all(momentFiles.map(f => blobToDataUrl(f.file)));
     }
     data.moments = data.moments || [];
     data.moments.push({ id, date: todayStr(), who: momentWho, content, time: hh + ':' + mm, photos });
@@ -1407,13 +1454,24 @@ $('#saveMoment').addEventListener('click', async () => {
     btn.disabled = false; btn.textContent = '发布瞬间';
   }
 });
-$('#momentBox').addEventListener('click', e => {
+$('#momentBox').addEventListener('click', async e => {
   const b = e.target.closest('[data-mdel2]');
   if (!b) return;
-  if (!confirm('要删除这个瞬间吗？')) return;
-  data.moments = (data.moments || []).filter(m => m.id !== b.dataset.mdel2);
+  if (!confirm('要删除这个瞬间吗？照片也会从云端一起删除')) return;
+  const m = (data.moments || []).find(x => x.id === b.dataset.mdel2);
+  let cloudDeleted = 0, cloudFail = 0;
+  if (m && m.photos && cloudOk()) {
+    const base = ossBase() + '/';
+    const keys = m.photos.filter(u => u.indexOf(base) === 0).map(u => u.slice(base.length));
+    for (const k of keys) {
+      try { const r = await ossDeleteObject(k); if (r.ok) cloudDeleted++; else cloudFail++; }
+      catch (err) { cloudFail++; }
+    }
+  }
+  data.moments = (data.moments || []).filter(x => x.id !== b.dataset.mdel2);
   persist(data); render();
-  showToast('瞬间已删除');
+  if (cloudFail) showToast('瞬间已删除，但部分云端照片没删成功，可在 OSS 控制台手动清理');
+  else showToast('瞬间已删除' + (cloudDeleted ? '，云端照片已一并清理' : ''));
 });
 
 /* ============ 视图切换 & 初始化 ============ */
@@ -1422,6 +1480,7 @@ window.addEventListener('hashchange', () => {
   switchView(VIEWS.includes(v) ? v : 'today');
 });
 switchView(VIEWS.includes(location.hash.replace('#', '')) ? location.hash.replace('#', '') : 'today');
+renderWhoToggle('noteReplyWhoToggle', replyWho);
 render();
 refreshCloudStatus();
 if (cloudOk()) cloudDownload(false);
