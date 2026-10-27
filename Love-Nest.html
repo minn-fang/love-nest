@@ -207,22 +207,23 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .photo-prev img{width:66px;height:66px;object-fit:cover;border-radius:12px;display:block}
 .photo-prev .rm{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#E0618A;color:#fff;font-size:12px;line-height:20px;text-align:center;padding:0}
 
-/* ============ 心里话：回复 ============ */
-.reply-bar{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;color:var(--ink-soft)}
-.reply-bar .rlb{font-weight:700}
-.reply-bar .who-toggle{margin:0;background:#FFF0F4;padding:2px;border-radius:999px}
-.reply-bar .who-toggle .who-btn{font-size:11px;padding:4px 12px}
-.replies{margin-top:10px;display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#FBF7F3;border-radius:14px}
+/* ============ 心里话：回复（小巧样式） ============ */
+.replies{margin-top:8px;display:flex;flex-direction:column;gap:4px;padding:7px 10px;background:#FBF7F3;border-radius:10px}
 .note-card.he .replies{background:#F3FAF7}
-.replies .nrep{font-size:13px;line-height:1.6;word-break:break-word;display:flex;flex-wrap:wrap;gap:2px 8px}
-.replies .nrep .nrep-who{font-family:var(--font-display);color:var(--pink-deep);flex:none}
+.replies .nrep{font-size:12.5px;line-height:1.55;word-break:break-word;display:flex;flex-wrap:wrap;gap:1px 8px}
+.replies .nrep .nrep-who{font-family:var(--font-display);color:var(--pink-deep);flex:none;font-size:12px}
 .replies .nrep.he .nrep-who{color:#3FA98A}
 .replies .nrep .nrep-tx{flex:1 1 auto;min-width:0;color:var(--ink)}
-.replies .nrep .nrep-tm{font-size:11px;color:#C4B8BC;flex:none}
-.nrep-row{display:flex;gap:8px;margin-top:10px;align-items:center}
-.nrep-row input{flex:1;min-width:0;border:1.5px solid #F3D8E2;background:#fff;border-radius:999px;padding:8px 14px;font-size:16px;color:var(--ink);outline:none;transition:.2s}
+.replies .nrep .nrep-tm{font-size:10.5px;color:#C9BDC2;flex:none}
+.nrep-btn{flex:none;font-size:12px;color:#C49BA9;background:none;border:none;padding:4px 6px;border-radius:8px;cursor:pointer;transition:.2s}
+.nrep-btn:hover{color:#E0618A;background:#FFE9F0}
+.note-card .nrep-btn{margin-left:2px}
+.nrep-row{display:flex;gap:6px;margin-top:8px;align-items:center}
+.nrep-row .who-toggle{background:#FFF0F4;padding:2px;border-radius:999px}
+.nrep-row .who-toggle .who-btn{font-size:11px;padding:3px 10px}
+.nrep-row input{flex:1;min-width:0;border:1.5px solid #F3D8E2;background:#fff;border-radius:999px;padding:6px 12px;font-size:16px;color:var(--ink);outline:none;transition:.2s}
 .nrep-row input:focus{border-color:#FF8BA7}
-.nrep-row .nrep-send{flex:none;background:var(--pink);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:999px;padding:8px 16px;cursor:pointer;transition:.2s}
+.nrep-row .nrep-send{flex:none;background:var(--pink);color:#fff;font-size:12px;font-weight:700;border:none;border-radius:999px;padding:6px 13px;cursor:pointer;transition:.2s}
 .note-card.he .nrep-row .nrep-send{background:var(--mint)}
 .nrep-row .nrep-send:hover{filter:brightness(.95)}
 .note-card{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--pink)}
@@ -408,7 +409,6 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <span class="t">我想对你说的心里话</span>
       <button class="edit" id="openNote"><svg class="i" style="width:15px;height:15px"><use href="#i-plus" xlink:href="#i-plus"/></svg>说句心里话</button>
     </div>
-    <div class="reply-bar"><span class="rlb">回复身份</span><div class="who-toggle" id="noteReplyWhoToggle"></div></div>
     <div class="wall" id="noteBox"></div>
   </section>
 
@@ -935,6 +935,7 @@ let memoWho = 'A';
 let noteWho = 'A';
 let momentWho = 'A';
 let replyWho = 'A';
+let replyOpenNote = null;
 let momentFiles = [];
 
 /* ============ 渲染：顶栏与统计 ============ */
@@ -1234,19 +1235,26 @@ function noteCardHTML(n) {
       '<span class="nrep-tm">' + dateLabel(r.date) + ' ' + esc(r.time || '') + '</span></div>';
   }).join('');
   const repl = replies ? '<div class="replies">' + replies + '</div>' : '';
+  const repOpen = replyOpenNote === n.id;
+  const replyRow = repOpen
+    ? '<div class="nrep-row"><div class="who-toggle" id="nrepWho' + n.id + '"></div>' +
+      '<input type="text" maxlength="100" placeholder="回复…"><button class="nrep-send" data-nsend="' + n.id + '">发送</button></div>'
+    : '';
   return '<div class="note-card' + (he ? ' he' : '') + '">' + MASCOT[n.who] +
     '<div class="bd"><div class="meta"><b>' + name + '</b><span class="tm">' + dateLabel(n.date) + ' ' + esc(n.time) + '</span>' +
+    '<button class="nrep-btn" data-nreply="' + n.id + '" aria-label="回复这条心里话">回复</button>' +
     '<button class="del" data-ndel="' + n.id + '" aria-label="删除这条心里话"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
-    '<div class="tx">' + esc(n.content) + '</div>' + repl +
-    '<div class="nrep-row"><input type="text" maxlength="100" placeholder="回复 ' + name + '…"><button class="nrep-send" data-nreply="' + n.id + '">回复</button></div></div></div>';
+    '<div class="tx">' + esc(n.content) + '</div>' + repl + replyRow + '</div></div>';
 }
 function renderNotes() {
   const list = (data.notes || []).slice().sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
   if (!list.length) {
+    replyOpenNote = null;
     $('#noteBox').innerHTML = '<div class="empty"><svg class="i" style="width:44px;height:44px;color:#FFC4D6"><use href="#i-mail" xlink:href="#i-mail"/></svg><p>还没有心里话</p><p class="hint">点右上角「说句心里话」，把藏在心里的话寄给 TA</p></div>';
     return;
   }
   $('#noteBox').innerHTML = list.map(noteCardHTML).join('');
+  if (replyOpenNote) renderWhoToggle('nrepWho' + replyOpenNote, replyWho);
 }
 
 /* ============ 备忘录 & 心里话：交互 ============ */
@@ -1257,16 +1265,16 @@ function renderWhoToggle(boxId, sel) {
     return '<button class="who-btn' + (sel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-ww="' + w + '" data-box="' + boxId + '">' + MASCOT[w] + '<span>' + name + '</span></button>';
   }).join('');
 }
-$$('.who-toggle').forEach(box => box.addEventListener('click', e => {
+document.addEventListener('click', e => {
   const b = e.target.closest('[data-ww]'); if (!b) return;
   const boxId = b.dataset.box;
   if (boxId === 'memoWhoToggle') { memoWho = b.dataset.ww; renderWhoToggle(boxId, memoWho); }
   else if (boxId === 'noteWhoToggle') { noteWho = b.dataset.ww; renderWhoToggle(boxId, noteWho); }
   else if (boxId === 'momentWhoToggle') { momentWho = b.dataset.ww; renderWhoToggle(boxId, momentWho); }
-  else if (boxId === 'noteReplyWhoToggle') { replyWho = b.dataset.ww; renderWhoToggle(boxId, replyWho); }
+  else if (boxId && boxId.indexOf('nrepWho') === 0) { replyWho = b.dataset.ww; renderWhoToggle(boxId, replyWho); }
   const saveBtn = boxId === 'memoWhoToggle' ? $('#saveMemo') : (boxId === 'noteWhoToggle' ? $('#saveNote') : (boxId === 'momentWhoToggle' ? $('#saveMoment') : null));
   if (saveBtn) saveBtn.className = 'btn btn-main' + (b.dataset.ww === 'B' ? ' he' : '');
-}));
+});
 function openMemo() {
   memoWho = 'A'; renderWhoToggle('memoWhoToggle', memoWho);
   $('#memoDue').value = todayStr();
@@ -1318,17 +1326,29 @@ $('#noteBox').addEventListener('click', e => {
     showToast('已删除');
     return;
   }
-  const rb = e.target.closest('[data-nreply]');
-  if (rb) {
-    const card = rb.closest('.note-card');
+  const nb = e.target.closest('[data-nreply]');
+  if (nb) {
+    const id = nb.dataset.nreply;
+    replyOpenNote = replyOpenNote === id ? null : id;
+    render();
+    if (replyOpenNote) {
+      const inp = $('#noteBox .nrep-row input');
+      if (inp) inp.focus();
+    }
+    return;
+  }
+  const sb = e.target.closest('[data-nsend]');
+  if (sb) {
+    const card = sb.closest('.note-card');
     const input = card.querySelector('.nrep-row input');
     const content = (input.value || '').trim();
     if (!content) { showToast('先写点回复内容呀'); return; }
     const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
-    const note = (data.notes || []).find(x => x.id === rb.dataset.nreply);
+    const note = (data.notes || []).find(x => x.id === sb.dataset.nsend);
     if (!note) return;
     note.replies = note.replies || [];
     note.replies.push({ who: replyWho, content, date: todayStr(), time: hh + ':' + mm });
+    replyOpenNote = null;
     persist(data); render();
     showToast('回复已送达');
   }
@@ -1454,24 +1474,17 @@ $('#saveMoment').addEventListener('click', async () => {
     btn.disabled = false; btn.textContent = '发布瞬间';
   }
 });
-$('#momentBox').addEventListener('click', async e => {
+$('#momentBox').addEventListener('click', e => {
   const b = e.target.closest('[data-mdel2]');
   if (!b) return;
-  if (!confirm('要删除这个瞬间吗？照片也会从云端一起删除')) return;
   const m = (data.moments || []).find(x => x.id === b.dataset.mdel2);
-  let cloudDeleted = 0, cloudFail = 0;
   if (m && m.photos && cloudOk()) {
     const base = ossBase() + '/';
-    const keys = m.photos.filter(u => u.indexOf(base) === 0).map(u => u.slice(base.length));
-    for (const k of keys) {
-      try { const r = await ossDeleteObject(k); if (r.ok) cloudDeleted++; else cloudFail++; }
-      catch (err) { cloudFail++; }
-    }
+    m.photos.filter(u => u.indexOf(base) === 0).map(u => u.slice(base.length))
+      .forEach(k => ossDeleteObject(k).catch(() => {}));
   }
   data.moments = (data.moments || []).filter(x => x.id !== b.dataset.mdel2);
   persist(data); render();
-  if (cloudFail) showToast('瞬间已删除，但部分云端照片没删成功，可在 OSS 控制台手动清理');
-  else showToast('瞬间已删除' + (cloudDeleted ? '，云端照片已一并清理' : ''));
 });
 
 /* ============ 视图切换 & 初始化 ============ */
@@ -1480,7 +1493,6 @@ window.addEventListener('hashchange', () => {
   switchView(VIEWS.includes(v) ? v : 'today');
 });
 switchView(VIEWS.includes(location.hash.replace('#', '')) ? location.hash.replace('#', '') : 'today');
-renderWhoToggle('noteReplyWhoToggle', replyWho);
 render();
 refreshCloudStatus();
 if (cloudOk()) cloudDownload(false);
