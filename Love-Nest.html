@@ -54,8 +54,9 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .logo .heart{width:36px;height:36px;border-radius:12px;background:linear-gradient(135deg,#FFB1C6,#FF8BA7);display:grid;place-items:center;color:#fff;flex:none;box-shadow:0 4px 10px rgba(255,139,167,.4)}
 .logo h1{font-family:var(--font-display);font-size:20px;line-height:1.2;white-space:nowrap}
 .logo small{display:block;font-size:11px;color:var(--ink-soft);white-space:nowrap}
-.nav{margin-left:auto;display:flex;background:#FFF0F4;border-radius:999px;padding:4px;flex:none}
-.nav a{padding:8px 18px;border-radius:999px;font-size:14px;color:var(--ink-soft);font-weight:700;transition:.2s}
+.nav{margin-left:auto;display:flex;background:#FFF0F4;border-radius:999px;padding:4px;flex:none;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{padding:8px 18px;border-radius:999px;font-size:14px;color:var(--ink-soft);font-weight:700;transition:.2s;flex:none;white-space:nowrap}
 .nav a.on{background:#fff;color:var(--pink-deep);box-shadow:0 3px 8px rgba(255,139,167,.25)}
 .days-badge{display:flex;align-items:center;gap:6px;background:#FFF4D6;border:1.5px dashed #F4C95D;color:#B98A1E;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:700;white-space:nowrap;flex:none}
 .days-badge .i{color:#F0A73E}
@@ -184,6 +185,27 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .memo-card.done .tx{color:#B5ACA9}
 .memo-card .meta2{font-size:11px;color:var(--ink-soft);margin-top:6px}
 .dot.on.dot-e{background:var(--lav)}
+
+/* ============ 瞬间 ============ */
+.moment-card{background:#fff;border-radius:22px;padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--pink)}
+.moment-card.he{border-top-color:var(--mint)}
+.moment-card .head{display:flex;align-items:center;gap:10px}
+.moment-card .mascot{width:44px;height:44px;flex:none}
+.moment-card .nm{font-family:var(--font-display);font-size:15px}
+.moment-card .dt{font-size:11px;color:var(--ink-soft)}
+.moment-card .del{margin-left:auto;color:#CEBCC1;padding:6px;border-radius:10px;flex:none;transition:.2s}
+.moment-card .del:hover{color:#E0618A;background:#FFE9F0}
+.moment-card .tx{font-size:14px;margin-top:10px;line-height:1.8;white-space:pre-wrap;word-break:break-word}
+.moment-photo{margin-top:12px;background:#F8F3F0;border-radius:16px;overflow:hidden;position:relative}
+.moment-photo img{display:block;width:100%;max-height:560px;object-fit:cover}
+.moment-photo .save{position:absolute;right:10px;bottom:10px;width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.92);color:var(--pink-deep);display:grid;place-items:center;box-shadow:0 3px 10px rgba(0,0,0,.18)}
+.moment-card.he .moment-photo .save{color:#3FA98A}
+.photo-pick{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--pink-deep);background:#FFF0F4;border:2px dashed #FFC4D6;border-radius:14px;padding:10px 16px;cursor:pointer;transition:.2s}
+.photo-pick:hover{background:#FFE3EC}
+.photo-prev{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:2px}
+.photo-prev .ph{position:relative;flex:none}
+.photo-prev img{width:66px;height:66px;object-fit:cover;border-radius:12px;display:block}
+.photo-prev .rm{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#E0618A;color:#fff;font-size:12px;line-height:20px;text-align:center;padding:0}
 .note-card{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--pink)}
 .note-card.he{border-top-color:var(--mint)}
 .note-card .mascot{width:44px;height:44px;flex:none}
@@ -255,8 +277,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 @media(max-width:520px){
   .topbar{flex-wrap:wrap;padding:12px}
   .logo h1{font-size:18px}
-  .nav{margin-left:0;order:3;width:100%;justify-content:center}
-  .nav a{flex:1;text-align:center}
+  .nav{margin-left:0;order:3;width:100%;justify-content:flex-start}
+  .nav a{flex:none;text-align:center;padding:8px 14px}
   .days-badge{padding:6px 10px;font-size:12px}
   .stats{grid-template-columns:repeat(2,1fr)}
   .date-nav .d{font-size:15px}
@@ -289,6 +311,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <a href="#calendar" data-view="calendar">日历</a>
       <a href="#memo" data-view="memo">备忘录</a>
       <a href="#notes" data-view="notes">心里话</a>
+      <a href="#moments" data-view="moments">瞬间</a>
     </nav>
     <div class="days-badge"><svg class="i" style="width:15px;height:15px"><use href="#i-heart" xlink:href="#i-heart"/></svg><span id="daysBadge">在一起 1 天</span></div>
   </header>
@@ -369,6 +392,16 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
     <div class="wall" id="noteBox"></div>
   </section>
 
+  <!-- ===== 视图：瞬间 ===== -->
+  <section class="section" id="moments">
+    <div class="sec-h">
+      <span class="t">瞬间</span>
+      <button class="edit" id="openMoment"><svg class="i" style="width:15px;height:15px"><use href="#i-plus" xlink:href="#i-plus"/></svg>发个瞬间</button>
+    </div>
+    <div class="notes-note">像朋友圈一样记录此刻：点照片右下角的保存按钮，或长按照片即可保存到手机</div>
+    <div class="wall" id="momentBox"></div>
+  </section>
+
   <footer class="foot">
     小提示：记录保存在本机浏览器的 localStorage 里；在设置里开启「云端同步」后，会自动保存到你们的阿里云 OSS<br>
     云端一份整包快照：先下载、再修改、再上传，两个人就可以随时共享
@@ -423,6 +456,27 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
     <div class="modal-ft">
       <button class="btn btn-ghost" data-close>再想想</button>
       <button class="btn btn-main" id="saveNote">寄出去</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 发瞬间弹窗 ===== -->
+<div class="mask" id="momentMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="momentTitle">
+    <div class="modal-top">
+      <h3 id="momentTitle">发个瞬间</h3>
+      <button class="x" data-close aria-label="关闭"><svg class="i"><use href="#i-close" xlink:href="#i-close"/></svg></button>
+    </div>
+    <div class="field"><label>谁发的</label><div class="who-toggle" id="momentWhoToggle"></div></div>
+    <div class="field"><label>想说的话</label><textarea id="momentContent" maxlength="300" placeholder="记录这一刻的心情…"></textarea></div>
+    <div class="field"><label>添加照片（可多选，最多 9 张，自动上传到云端）</label>
+      <label class="photo-pick"><svg class="i" style="width:18px;height:18px"><use href="#i-camera" xlink:href="#i-camera"/></svg>选择照片<input type="file" id="momentFiles" accept="image/*" multiple hidden></label>
+      <div class="photo-prev" id="momentPrev"></div>
+      <div class="hint-txt" id="momentUploadHint"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" data-close>再想想</button>
+      <button class="btn btn-main" id="saveMoment">发布瞬间</button>
     </div>
   </div>
 </div>
@@ -513,6 +567,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
   <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.2 18.5H9a6.5 6.5 0 1 1 6.2-8.6A5.2 5.2 0 0 1 17.2 18.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 13.5v-3M10.3 12.2 12 10.5l1.7 1.7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-note" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M14 3v5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 12.5h8M8 16h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 5.5h16a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 7.5 12 14l9-6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7.5h3l1.5-2.5h7L17 7.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.9"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M8.5 11.5 12 15l3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 19.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
 </svg>
 
 <script>
@@ -616,7 +672,8 @@ function defaults() {
     couple: { nameA: '兔兔', nameB: '熊熊', cityA: '成都', cityB: '北京', distance: '1525 km', startDate: '2026-10-07', meetDate: addDays(t, 30) },
     records: {},
     memos: [],
-    notes: []
+    notes: [],
+    moments: []
   };
 }
 function load() {
@@ -626,6 +683,7 @@ function load() {
       const d = JSON.parse(raw);
       d.memos = Array.isArray(d.memos) ? d.memos : [];
       d.notes = Array.isArray(d.notes) ? d.notes : [];
+      d.moments = Array.isArray(d.moments) ? d.moments : [];
       return d;
     }
   } catch (e) {}
@@ -735,6 +793,14 @@ async function ossReq(method, body) {
   if (method === 'PUT') { opt.headers['Content-Type'] = contentType; opt.body = JSON.stringify(body); }
   return fetch(ossBase() + '/' + key, opt);
 }
+/* 上传二进制对象（瞬间照片等）到 OSS */
+async function ossPutObject(key, body, contentType) {
+  const date = new Date().toUTCString();
+  const resource = '/' + cloud.bucket + '/' + key;
+  const headers = { 'x-oss-date': date, 'Content-Type': contentType, 'Authorization': ossSign('PUT', contentType, date, resource) };
+  if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+  return fetch(ossBase() + '/' + key, { method: 'PUT', headers, body });
+}
 function setCloudState(s, msg) {
   const el = $('#cloudInd');
   if (el) {
@@ -771,7 +837,7 @@ async function cloudUpload(manual) {
   if (!cloudOk()) { setCloudState('off'); if (manual) showToast('请先在设置里填写云端配置并开启同步'); return; }
   setCloudState('syncing', '正在上传…');
   try {
-    const res = await ossReq('PUT', { couple: data.couple, records: data.records, memos: data.memos, notes: data.notes });
+    const res = await ossReq('PUT', { couple: data.couple, records: data.records, memos: data.memos, notes: data.notes, moments: data.moments });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
     saveCloud();
@@ -795,6 +861,7 @@ async function cloudDownload(manual) {
     data.records = remote.records || {};
     data.memos = Array.isArray(remote.memos) ? remote.memos : (data.memos || []);
     data.notes = Array.isArray(remote.notes) ? remote.notes : (data.notes || []);
+    data.moments = Array.isArray(remote.moments) ? remote.moments : (data.moments || []);
     saveLocal(data);
     render();
     cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
@@ -838,9 +905,11 @@ let whoSel = 'A';
 let moodSel = 'energy';
 let memoWho = 'A';
 let noteWho = 'A';
+let momentWho = 'A';
+let momentFiles = [];
 
 /* ============ 渲染：顶栏与统计 ============ */
-function render() { renderBadge(); renderStats(); renderDateNav(); renderProgress(); renderRecords(); renderCalendar(); renderMemo(); renderNotes(); }
+function render() { renderBadge(); renderStats(); renderDateNav(); renderProgress(); renderRecords(); renderCalendar(); renderMemo(); renderNotes(); renderMoments(); }
 
 function renderBadge() {
   const n = dayDiff(todayStr(), data.couple.startDate);
@@ -940,7 +1009,7 @@ function renderCalendar() {
 }
 
 /* ============ 视图切换 ============ */
-const VIEWS = ['today', 'calendar', 'memo', 'notes'];
+const VIEWS = ['today', 'calendar', 'memo', 'notes', 'moments'];
 function switchView(v) {
   view = VIEWS.includes(v) ? v : 'today';
   VIEWS.forEach(id => $('#' + id).classList.toggle('on', id === view));
@@ -1156,7 +1225,8 @@ $$('.who-toggle').forEach(box => box.addEventListener('click', e => {
   const boxId = b.dataset.box;
   if (boxId === 'memoWhoToggle') { memoWho = b.dataset.ww; renderWhoToggle(boxId, memoWho); }
   else if (boxId === 'noteWhoToggle') { noteWho = b.dataset.ww; renderWhoToggle(boxId, noteWho); }
-  const saveBtn = boxId === 'memoWhoToggle' ? $('#saveMemo') : $('#saveNote');
+  else if (boxId === 'momentWhoToggle') { momentWho = b.dataset.ww; renderWhoToggle(boxId, momentWho); }
+  const saveBtn = boxId === 'memoWhoToggle' ? $('#saveMemo') : (boxId === 'noteWhoToggle' ? $('#saveNote') : $('#saveMoment'));
   if (saveBtn) saveBtn.className = 'btn btn-main' + (b.dataset.ww === 'B' ? ' he' : '');
 }));
 function openMemo() {
@@ -1207,6 +1277,143 @@ $('#noteBox').addEventListener('click', e => {
   data.notes = (data.notes || []).filter(n => n.id !== b.dataset.ndel);
   persist(data); render();
   showToast('已删除');
+});
+
+/* ============ 渲染：瞬间 ============ */
+function renderMomentCard(m) {
+  const he = m.who === 'B';
+  const name = esc(m.who === 'A' ? data.couple.nameA : data.couple.nameB);
+  const photos = (m.photos || []).map((u, i) =>
+    '<div class="moment-photo"><img src="' + u + '" alt="瞬间照片 ' + (i + 1) + '" loading="lazy" onerror="this.closest(\'.moment-photo\').style.display=\'none\'">' +
+    '<a class="save" href="' + u + '" target="_blank" rel="noopener" aria-label="打开大图保存" title="打开大图保存"><svg class="i" style="width:16px;height:16px"><use href="#i-download" xlink:href="#i-download"/></svg></a></div>'
+  ).join('');
+  return '<div class="moment-card' + (he ? ' he' : '') + '">' +
+    '<div class="head">' + MASCOT[m.who] +
+    '<div><div class="nm">' + name + '</div><div class="dt">' + dateLabel(m.date) + ' ' + esc(m.time || '') + '</div></div>' +
+    '<button class="del" data-mdel2="' + m.id + '" aria-label="删除这个瞬间"><svg class="i" style="width:16px;height:16px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
+    (m.content ? '<div class="tx">' + esc(m.content) + '</div>' : '') +
+    photos + '</div>';
+}
+function renderMoments() {
+  const list = (data.moments || []).slice().sort((a, b) => (b.date + (b.time || '')).localeCompare(a.date + (a.time || '')));
+  if (!list.length) {
+    $('#momentBox').innerHTML = '<div class="empty"><svg class="i" style="width:44px;height:44px;color:#FFC4D6"><use href="#i-camera" xlink:href="#i-camera"/></svg><p>还没有瞬间</p><p class="hint">点右上角「发个瞬间」，配上照片记录此刻吧</p></div>';
+    return;
+  }
+  $('#momentBox').innerHTML = list.map(renderMomentCard).join('');
+}
+
+/* ============ 瞬间：照片处理与发布 ============ */
+function compressImage(file, maxEdge, quality) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (!w || !h) { reject(new Error('图片尺寸异常')); return; }
+        const scale = Math.min(1, maxEdge / Math.max(w, h));
+        w = Math.round(w * scale); h = Math.round(h * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(b => (b ? resolve(b) : reject(new Error('压缩失败'))), 'image/jpeg', quality);
+      };
+      img.onerror = () => reject(new Error('图片读取失败'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('文件读取失败'));
+    reader.readAsDataURL(file);
+  });
+}
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = () => reject(new Error('转换失败'));
+    r.readAsDataURL(blob);
+  });
+}
+async function uploadMomentPhotos(momentId, blobs) {
+  const urls = [];
+  for (let i = 0; i < blobs.length; i++) {
+    const key = 'moments/' + momentId + '/' + (i + 1) + '.jpg';
+    const res = await ossPutObject(key, blobs[i], 'image/jpeg');
+    if (!res.ok) throw new Error('照片 ' + (i + 1) + ' 上传失败 HTTP ' + res.status);
+    urls.push(ossBase() + '/' + key);
+  }
+  return urls;
+}
+function renderMomentPrev() {
+  $('#momentPrev').innerHTML = momentFiles.map((f, i) =>
+    '<div class="ph"><img src="' + f.dataUrl + '" alt="预览"><button class="rm" data-rm="' + i + '" aria-label="移除这张照片">×</button></div>').join('');
+  $('#momentUploadHint').textContent = momentFiles.length
+    ? '已选 ' + momentFiles.length + ' 张照片（发布后按顺序逐张展示）'
+    : (cloudOk() ? '' : '云端同步未开启：照片将压缩后保存在本机，开启云端后请重新发布');
+}
+function openMoment() {
+  momentWho = 'A';
+  renderWhoToggle('momentWhoToggle', momentWho);
+  $('#momentContent').value = '';
+  $('#momentFiles').value = '';
+  momentFiles = [];
+  renderMomentPrev();
+  $('#saveMoment').className = 'btn btn-main';
+  $('#saveMoment').disabled = false;
+  $('#saveMoment').textContent = '发布瞬间';
+  openMask('momentMask');
+}
+$('#openMoment').addEventListener('click', openMoment);
+$('#momentFiles').addEventListener('change', () => {
+  const files = Array.from($('#momentFiles').files || []);
+  if (!files.length) return;
+  if (momentFiles.length + files.length > 9) { showToast('一次最多 9 张照片'); $('#momentFiles').value = ''; return; }
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = () => { momentFiles.push({ file, dataUrl: reader.result }); renderMomentPrev(); };
+    reader.readAsDataURL(file);
+  });
+});
+$('#momentPrev').addEventListener('click', e => {
+  const rm = e.target.closest('[data-rm]');
+  if (!rm) return;
+  momentFiles.splice(Number(rm.dataset.rm), 1);
+  renderMomentPrev();
+});
+$('#saveMoment').addEventListener('click', async () => {
+  const content = $('#momentContent').value.trim();
+  if (!content && !momentFiles.length) { showToast('写点什么，或选张照片吧'); return; }
+  const btn = $('#saveMoment');
+  btn.disabled = true; btn.textContent = '正在上传…';
+  const id = 'mo' + Date.now() + Math.random().toString(36).slice(2, 6);
+  const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
+  try {
+    let photos = [];
+    if (momentFiles.length) {
+      const maxEdge = cloudOk() ? 1280 : 720;
+      const blobs = [];
+      for (const f of momentFiles) blobs.push(await compressImage(f.file, maxEdge, cloudOk() ? 0.85 : 0.7));
+      photos = cloudOk()
+        ? await uploadMomentPhotos(id, blobs)
+        : await Promise.all(blobs.map(blobToDataUrl));
+    }
+    data.moments = data.moments || [];
+    data.moments.push({ id, date: todayStr(), who: momentWho, content, time: hh + ':' + mm, photos });
+    persist(data); closeMask('momentMask'); render();
+    showToast(photos.length ? '瞬间发布成功，照片已存到云端' : '瞬间发布成功');
+  } catch (e) {
+    showToast('发布失败：' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '发布瞬间';
+  }
+});
+$('#momentBox').addEventListener('click', e => {
+  const b = e.target.closest('[data-mdel2]');
+  if (!b) return;
+  if (!confirm('要删除这个瞬间吗？')) return;
+  data.moments = (data.moments || []).filter(m => m.id !== b.dataset.mdel2);
+  persist(data); render();
+  showToast('瞬间已删除');
 });
 
 /* ============ 视图切换 & 初始化 ============ */
