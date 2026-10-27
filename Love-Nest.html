@@ -164,15 +164,26 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .notes-note{margin:4px 4px 0;font-size:12px;color:var(--ink-soft)}
 .wall{display:flex;flex-direction:column;gap:12px;margin-top:14px}
 .memo-date{font-family:var(--font-display);font-size:14px;color:var(--pink-deep);margin:6px 2px 2px}
+.memo-date.date-past{color:#B5ACA9}
+.memo-sec{font-family:var(--font-display);font-size:13px;color:#B98A1E;background:#FFF4D6;border-radius:999px;padding:5px 14px;margin:2px 2px 10px;align-self:flex-start}
+.memo-sec.sec-past{color:#9B8B90;background:#F0EBE9}
 .memo-card{background:#FFFBE9;border:1.5px solid #F6E7A8;border-radius:16px;padding:12px 14px;box-shadow:0 4px 12px rgba(244,201,93,.14)}
 .memo-card.he{background:#F0FAF6;border-color:#BDEAD8;box-shadow:0 4px 12px rgba(127,212,184,.14)}
+.memo-card.done{background:#F6F3F2;border-color:#E6E0DE;box-shadow:none}
 .memo-card .top{display:flex;align-items:center;gap:8px}
 .memo-card .chip{font-size:12px;font-weight:700;background:#F4C45C;color:#fff;padding:3px 11px;border-radius:999px;flex:none}
 .memo-card.he .chip{background:var(--mint)}
+.memo-card .due{font-size:11px;font-weight:700;color:#B98A1E;background:#FFF4D6;padding:3px 10px;border-radius:999px;flex:none;white-space:nowrap}
+.memo-card.he .due{color:#3FA98A;background:#E4F6EE}
+.memo-card .due.due-past{color:#9B8B90;background:#F0EBE9}
 .memo-card .tm{font-size:11px;color:var(--ink-soft);margin-left:auto;flex:none}
 .memo-card .del{color:#CEBCC1;padding:4px;border-radius:8px;flex:none;transition:.2s}
 .memo-card .del:hover{color:#E0618A;background:#FFF1E5}
+.memo-card.done .del:hover{background:#EFE9E7}
 .memo-card .tx{font-size:14px;margin-top:8px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.memo-card.done .tx{color:#B5ACA9}
+.memo-card .meta2{font-size:11px;color:var(--ink-soft);margin-top:6px}
+.dot.on.dot-e{background:var(--lav)}
 .note-card{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:20px;padding:16px;box-shadow:var(--shadow);border-top:4px solid var(--pink)}
 .note-card.he{border-top-color:var(--mint)}
 .note-card .mascot{width:44px;height:44px;flex:none}
@@ -333,6 +344,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <div class="cal-foot">
         <span><i class="dot on dot-a"></i><span id="calLegA">兔兔</span></span>
         <span><i class="dot on dot-b"></i><span id="calLegB">熊熊</span></span>
+        <span><i class="dot on dot-e"></i>事件</span>
         <span>点击日期查看当天记录</span>
       </div>
     </div>
@@ -341,10 +353,10 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
   <!-- ===== 视图：备忘录 ===== -->
   <section class="section" id="memo">
     <div class="sec-h">
-      <span class="t">备忘录</span>
-      <button class="edit" id="openMemo"><svg class="i" style="width:15px;height:15px"><use href="#i-plus" xlink:href="#i-plus"/></svg>写一张纸条</button>
+      <span class="t">备忘录 · 事件安排</span>
+      <button class="edit" id="openMemo"><svg class="i" style="width:15px;height:15px"><use href="#i-plus" xlink:href="#i-plus"/></svg>添加事件</button>
     </div>
-    <div class="notes-note">给对方留的小纸条：提醒、心愿、想一起做的事，都贴在这里</div>
+    <div class="notes-note">给 TA 留的提醒和心愿：按发生时间排序，最近要发生的排前面，发生过的会变灰保留</div>
     <div class="wall" id="memoBox"></div>
   </section>
 
@@ -382,18 +394,19 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
   </div>
 </div>
 
-<!-- ===== 写备忘录弹窗 ===== -->
+<!-- ===== 添加备忘录事件弹窗 ===== -->
 <div class="mask" id="memoMask">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="memoTitle">
     <div class="modal-top">
-      <h3 id="memoTitle">写一张纸条</h3>
+      <h3 id="memoTitle">添加事件</h3>
       <button class="x" data-close aria-label="关闭"><svg class="i"><use href="#i-close" xlink:href="#i-close"/></svg></button>
     </div>
     <div class="field"><label>谁写的</label><div class="who-toggle" id="memoWhoToggle"></div></div>
-    <div class="field"><label>纸条内容</label><textarea id="memoContent" maxlength="120" placeholder="比如：记得喝水呀、周三交论文、周末想去看电影…"></textarea></div>
+    <div class="field"><label>事件日期</label><input type="date" id="memoDue"></div>
+    <div class="field"><label>事件内容</label><textarea id="memoContent" maxlength="120" placeholder="比如：10月29日上课、10月28日开会、周末想看电影…"></textarea></div>
     <div class="modal-ft">
       <button class="btn btn-ghost" data-close>再想想</button>
-      <button class="btn btn-main" id="saveMemo">贴上去</button>
+      <button class="btn btn-main" id="saveMemo">添加事件</button>
     </div>
   </div>
 </div>
@@ -917,8 +930,9 @@ function renderCalendar() {
     const ds = y + '-' + pad(m + 1) + '-' + pad(day);
     const recs = data.records[ds] || [];
     const a = recs.some(r => r.who === 'A'), b = recs.some(r => r.who === 'B');
+    const ev = (data.memos || []).some(m => m.due === ds);
     cells += '<button class="cal-cell' + (ds === cur ? ' sel' : '') + (ds === todayStr() ? ' today' : '') + '" data-date="' + ds + '" aria-label="' + ds + ' 的学习记录">' +
-      '<span class="cal-num">' + day + '</span><span class="cal-dots"><i class="dot dot-a' + (a ? ' on' : '') + '"></i><i class="dot dot-b' + (b ? ' on' : '') + '"></i></span></button>';
+      '<span class="cal-num">' + day + '</span><span class="cal-dots"><i class="dot dot-a' + (a ? ' on' : '') + '"></i><i class="dot dot-b' + (b ? ' on' : '') + '"></i><i class="dot dot-e' + (ev ? ' on' : '') + '"></i></span></button>';
   }
   $('#calGrid').innerHTML = cells;
   $('#calLegA').textContent = data.couple.nameA;
@@ -1067,26 +1081,47 @@ $('#clearRecords').addEventListener('click', () => {
   showToast('已清空，从今天开始重新记录吧');
 });
 
-/* ============ 渲染：备忘录 ============ */
+/* ============ 渲染：备忘录（事件安排） ============ */
+function memoDueLabel(d) { return d.slice(5).replace('-', '月') + '日'; }
 function memoItemHTML(m) {
   const he = m.who === 'B';
   const name = esc(m.who === 'A' ? data.couple.nameA : data.couple.nameB);
-  return '<div class="memo-card' + (he ? ' he' : '') + '">' +
-    '<div class="top"><span class="chip">' + name + '</span><span class="tm">' + esc(m.time) + '</span>' +
-    '<button class="del" data-mdel="' + m.id + '" aria-label="删除这张纸条"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
-    '<div class="tx">' + esc(m.content) + '</div></div>';
+  const past = m.due < todayStr();
+  const diff = dayDiff(m.due, todayStr());
+  const hint = past ? '已结束' : (diff === 0 ? '就是今天' : '还剩 ' + diff + ' 天');
+  return '<div class="memo-card' + (he ? ' he' : '') + (past ? ' done' : '') + '">' +
+    '<div class="top"><span class="chip">' + name + '</span>' +
+    '<span class="due' + (past ? ' due-past' : '') + '">' + memoDueLabel(m.due) + ' · ' + hint + '</span>' +
+    '<span class="tm">' + esc(m.time) + '</span>' +
+    '<button class="del" data-mdel="' + m.id + '" aria-label="删除这个事件"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
+    '<div class="tx">' + esc(m.content) + '</div>' +
+    (m.date && m.date !== m.due ? '<div class="meta2">创建于 ' + dateLabel(m.date) + '</div>' : '') +
+    '</div>';
 }
-function renderMemo() {
-  const list = (data.memos || []).slice().sort((a, b) => b.date.localeCompare(a.date) || (b.time || '').localeCompare(a.time || ''));
-  if (!list.length) {
-    $('#memoBox').innerHTML = '<div class="empty"><svg class="i" style="width:44px;height:44px;color:#FFC4D6"><use href="#i-note" xlink:href="#i-note"/></svg><p>还没有小纸条</p><p class="hint">点右上角「写一张纸条」，把想提醒 TA 的事记下来</p></div>';
-    return;
-  }
-  let html = '', lastDate = '';
+function memoGroupHTML(list, past) {
+  let html = '', last = '';
   list.forEach(m => {
-    if (m.date !== lastDate) { lastDate = m.date; html += '<div class="memo-date">' + dateLabel(m.date) + '</div>'; }
+    if (m.due !== last) {
+      last = m.due;
+      html += '<div class="memo-date' + (past ? ' date-past' : '') + '">' + dateLabel(m.due) + '</div>';
+    }
     html += memoItemHTML(m);
   });
+  return html;
+}
+function renderMemo() {
+  const today = todayStr();
+  const memos = (data.memos || []).slice().map(m => { if (!m.due) m.due = m.date || today; return m; });
+  if (!memos.length) {
+    $('#memoBox').innerHTML = '<div class="empty"><svg class="i" style="width:44px;height:44px;color:#FFC4D6"><use href="#i-note" xlink:href="#i-note"/></svg><p>还没有事件安排</p><p class="hint">点右上角「添加事件」，把接下来要做的事记下来</p></div>';
+    return;
+  }
+  const cmp = (a, b) => a.due.localeCompare(b.due) || (b.time || '').localeCompare(a.time || '');
+  const active = memos.filter(m => m.due >= today).sort(cmp);
+  const past = memos.filter(m => m.due < today).sort((a, b) => b.due.localeCompare(a.due) || (b.time || '').localeCompare(a.time || ''));
+  let html = '';
+  if (active.length) html += '<div class="memo-sec">待发生 · ' + active.length + ' 件</div>' + memoGroupHTML(active, false);
+  if (past.length) html += '<div class="memo-sec sec-past">已发生 · ' + past.length + ' 件</div>' + memoGroupHTML(past, true);
   $('#memoBox').innerHTML = html;
 }
 
@@ -1126,6 +1161,7 @@ $$('.who-toggle').forEach(box => box.addEventListener('click', e => {
 }));
 function openMemo() {
   memoWho = 'A'; renderWhoToggle('memoWhoToggle', memoWho);
+  $('#memoDue').value = todayStr();
   $('#memoContent').value = '';
   $('#saveMemo').className = 'btn btn-main';
   openMask('memoMask');
@@ -1140,12 +1176,14 @@ $('#openMemo').addEventListener('click', openMemo);
 $('#openNote').addEventListener('click', openNote);
 $('#saveMemo').addEventListener('click', () => {
   const content = $('#memoContent').value.trim();
-  if (!content) { showToast('先写点内容呀'); return; }
+  if (!content) { showToast('先写点事件内容呀'); return; }
+  const due = $('#memoDue').value;
+  if (!due) { showToast('请选择事件日期'); return; }
   const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
   data.memos = data.memos || [];
-  data.memos.push({ id: 'm' + Date.now() + Math.random().toString(36).slice(2, 6), date: todayStr(), who: memoWho, content, time: hh + ':' + mm });
+  data.memos.push({ id: 'm' + Date.now() + Math.random().toString(36).slice(2, 6), date: todayStr(), due, who: memoWho, content, time: hh + ':' + mm });
   persist(data); closeMask('memoMask'); render();
-  showToast('纸条贴好啦，TA 会看到的');
+  showToast('事件已添加，一起期待那天吧');
 });
 $('#saveNote').addEventListener('click', () => {
   const content = $('#noteContent').value.trim();
