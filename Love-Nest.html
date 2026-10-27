@@ -260,6 +260,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .who-btn.on-a{border-color:var(--pink);background:#FFF0F4;color:var(--pink-deep)}
 .who-btn.on-b{border-color:var(--mint);background:#F0FAF6;color:#3FA98A}
 .who-btn .mascot{width:38px;height:38px}
+.mascot-img{object-fit:cover;border-radius:50%;display:block}
 .moods{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mood-btn{border:2px solid #F3E4E8;border-radius:14px;padding:9px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--ink-soft);background:#fff;transition:.2s}
 .mood-btn.on{border-color:var(--pink);background:#FFF0F4;color:var(--pink-deep)}
@@ -624,32 +625,10 @@ function moodSvg(k) {
   return '<svg viewBox="0 0 24 24" class="mood" aria-hidden="true"><circle cx="12" cy="12" r="10.2" fill="' + m.c + '"/><circle cx="6.8" cy="13.6" r="1.7" fill="#fff" opacity=".7"/><circle cx="17.2" cy="13.6" r="1.7" fill="#fff" opacity=".7"/>' + eyes + face + '</svg>';
 }
 
-/* ============ 头像（SVG 吉祥物） ============ */
+/* ============ 头像（兔兔=小熊照片 / 熊熊=小狗照片） ============ */
 const MASCOT = {
-  A: '<svg viewBox="0 0 120 120" class="mascot" aria-hidden="true">' +
-     '<path d="M42 34C35 13 47 4 56 15c5 6 7 16 5 27" fill="#FFCFDF"/>' +
-     '<path d="M78 34c7-21-5-30-14-19-5 6-7 16-5 27" fill="#FFCFDF"/>' +
-     '<path d="M45 32c-5-14 3-21 9-13 3.5 4.5 5 11 4 18" fill="#FF9DB8"/>' +
-     '<path d="M75 32c5-14-3-21-9-13-3.5 4.5-5 11-4 18" fill="#FF9DB8"/>' +
-     '<circle cx="60" cy="64" r="35" fill="#FFB8CE"/>' +
-     '<circle cx="42" cy="70" r="7.5" fill="#FF8AA8" opacity=".75"/>' +
-     '<circle cx="78" cy="70" r="7.5" fill="#FF8AA8" opacity=".75"/>' +
-     '<path d="M44 59q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
-     '<path d="M64 59q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
-     '<path d="M55 77q5 4.5 10 0" stroke="#7A4457" stroke-width="2.8" fill="none" stroke-linecap="round"/></svg>',
-  B: '<svg viewBox="0 0 120 120" class="mascot" aria-hidden="true">' +
-     '<circle cx="31" cy="35" r="14" fill="#A7E3CC"/>' +
-     '<circle cx="89" cy="35" r="14" fill="#A7E3CC"/>' +
-     '<circle cx="31" cy="35" r="7" fill="#CFF3E4"/>' +
-     '<circle cx="89" cy="35" r="7" fill="#CFF3E4"/>' +
-     '<circle cx="60" cy="64" r="37" fill="#C4EEDB"/>' +
-     '<circle cx="43" cy="72" r="7.5" fill="#8FD4B6" opacity=".7"/>' +
-     '<circle cx="77" cy="72" r="7.5" fill="#8FD4B6" opacity=".7"/>' +
-     '<ellipse cx="60" cy="76" rx="12" ry="8.5" fill="#F4FCF9"/>' +
-     '<circle cx="60" cy="71" r="2.2" fill="#7A4457"/>' +
-     '<path d="M44 60q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
-     '<path d="M64 60q6-6 12 0" stroke="#7A4457" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
-     '<path d="M55 82q5 4 10 0" stroke="#7A4457" stroke-width="2.8" fill="none" stroke-linecap="round"/></svg>'
+  A: '<img class="mascot mascot-img" src="https://our-love-nest.oss-cn-beijing.aliyuncs.com/%E5%B0%8F%E7%86%8A%E7%86%8A.jpg" alt="" aria-hidden="true" onerror="this.style.visibility=\'hidden\'">',
+  B: '<img class="mascot mascot-img" src="https://our-love-nest.oss-cn-beijing.aliyuncs.com/%E5%B0%8F%E7%8B%97%E7%8B%97.jpg" alt="" aria-hidden="true" onerror="this.style.visibility=\'hidden\'">'
 };
 
 /* ============ 城市坐标与直线距离 ============ */
