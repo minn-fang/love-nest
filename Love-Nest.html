@@ -833,21 +833,14 @@ function signPhotoUrl(u) {
   if (cloudToken()) q += '&x-oss-security-token=' + encodeURIComponent(cloudToken());
   return u + q;
 }
-/* 列出瞬间照片对象（moments/ 前缀） */
-async function ossListPhotos() {
-  const date = new Date().toUTCString();
-  const query = 'max-keys=1000&prefix=moments/';
-  const resource = '/' + cloud.bucket + '/?' + query;
-  const headers = { 'x-oss-date': date, 'Authorization': ossSign('GET', '', date, resource) };
-  if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
-  const res = await fetch(ossBase() + '/?' + query, { method: 'GET', headers });
-  if (!res.ok) throw new Error('列出照片失败 HTTP ' + res.status);
-  const xml = await res.text();
-  const keys = [];
-  const re = /<Key>([\s\S]*?)<\/Key>/g;
-  let m;
-  while ((m = re.exec(xml))) keys.push(m[1]);
-  return keys;
+/* 收集瞬间照片对象键（直接从本地数据里的照片 URL 提取，无需 OSS 列桶权限） */
+function momentPhotoKeys() {
+  const base = ossBase() + '/';
+  const keys = new Set();
+  (data.moments || []).forEach(m => (m.photos || []).forEach(u => {
+    if (u.indexOf(base) === 0) keys.add(u.slice(base.length));
+  }));
+  return Array.from(keys);
 }
 /* 给一张旧照片补上一年缓存头（原地复制 + 替换元数据，不重传数据、不压缩画质） */
 const PHOTO_MIME = { gif: 'image/gif', png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg', bmp: 'image/bmp', avif: 'image/avif' };
@@ -1217,9 +1210,10 @@ $('#cloudFixCacheBtn').addEventListener('click', async () => {
   const btn = $('#cloudFixCacheBtn'), st = $('#cacheFixStatus');
   btn.disabled = true; st.textContent = '正在优化…（照片多时稍等）';
   try {
-    const keys = await ossListPhotos();
+    const keys = momentPhotoKeys();
+    if (!keys.length) { st.textContent = '当前没有照片需要优化（先上传瞬间照片再试）'; return; }
     for (const k of keys) await ossFixOnePhoto(k);
-    st.textContent = '完成：已为 ' + keys.length + ' 张旧照片设置一年缓存（不重传、不压缩画质）';
+    st.textContent = '完成：已为 ' + keys.length + ' 张照片设置一年缓存（不重传、不压缩画质）';
     showToast('照片缓存优化完成：' + keys.length + ' 张');
   } catch (e) {
     st.textContent = '优化失败：' + e.message;
