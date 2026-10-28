@@ -553,6 +553,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       </div>
       <div class="hint-txt" id="cloudStatus">未开启云端同步</div>
       <div class="hint-txt" id="keyStatus">AccessKey 未配置</div>
+      <button class="btn btn-ghost" id="cloudFixCacheBtn" style="margin-top:4px">优化旧照片缓存（一年）</button>
+      <div class="hint-txt" id="cacheFixStatus"></div>
       <div class="settings-note">
         AccessKey 在这里填写后只保存在<b>当前设备</b>的浏览器本地，不会写进本文件、也不会出现在 GitHub 上。<br>
         你和对象<b>各自在自己的设备上各输入一次</b>（把 Key 私下发给对方，如微信，不要发到 GitHub/群聊）。<br>
@@ -772,9 +774,12 @@ function b64(bytes) {
   return out;
 }
 /* 浏览器无法发送 Date 请求头，OSS 官方 SDK 的做法：发 x-oss-date，签名串里日期位置与规范化头都带它 */
-function ossSign(method, contentType, date, resource) {
+function ossSign(method, contentType, date, resource, extraOssHeaders) {
   const hdrs = [];
   if (cloudToken()) hdrs.push('x-oss-security-token:' + cloudToken());
+  if (extraOssHeaders) for (const k in extraOssHeaders) {
+    if (k.toLowerCase().indexOf('x-oss-') === 0) hdrs.push(k.toLowerCase() + ':' + extraOssHeaders[k]);
+  }
   hdrs.push('x-oss-date:' + date);
   hdrs.sort();
   const canonicalHeaders = hdrs.join('\n') + '\n';
@@ -794,11 +799,13 @@ async function ossReq(method, body) {
   if (method === 'PUT') { opt.headers['Content-Type'] = contentType; opt.body = JSON.stringify(body); }
   return fetch(ossBase() + '/' + key, opt);
 }
-/* 上传二进制对象（瞬间照片等）到 OSS */
-async function ossPutObject(key, body, contentType) {
+/* 上传二进制对象（瞬间照片等）到 OSS；extraHeaders 用于附加 Cache-Control 等头 */
+async function ossPutObject(key, body, contentType, extraHeaders) {
   const date = new Date().toUTCString();
   const resource = '/' + cloud.bucket + '/' + key;
-  const headers = { 'x-oss-date': date, 'Content-Type': contentType, 'Authorization': ossSign('PUT', contentType, date, resource) };
+  const headers = { 'x-oss-date': date, 'Content-Type': contentType };
+  if (extraHeaders) for (const k in extraHeaders) headers[k] = extraHeaders[k];
+  headers['Authorization'] = ossSign('PUT', contentType, date, resource, extraHeaders);
   if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
   return fetch(ossBase() + '/' + key, { method: 'PUT', headers, body });
 }
@@ -810,19 +817,51 @@ async function ossDeleteObject(key) {
   if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
   return fetch(ossBase() + '/' + key, { method: 'DELETE', headers });
 }
-/* 为照片生成长期有效的签名访问链接：Bucket 设为私有后照片也能正常显示/下载 */
+/* 为照片生成长期有效的签名访问链接：Bucket 设为私有后照片也能正常显示/下载。
+ * 过期时间用固定常量，保证同一张照片的签名 URL 恒定不变，浏览器才能按 URL 缓存（否则每次都重新下载）。 */
+const PHOTO_SIGN_EXPIRES = Math.floor(Date.UTC(2036, 0, 1, 0, 0, 0) / 1000);
 function signPhotoUrl(u) {
   if (!cloudOk() || u.indexOf('?') >= 0 || u.indexOf('data:') === 0) return u;
   const base = ossBase() + '/';
   if (u.indexOf(base) !== 0) return u;
   const key = u.slice(base.length);
-  const expires = Math.floor(Date.now() / 1000) + 3650 * 24 * 3600; // 10 年有效
+  const expires = PHOTO_SIGN_EXPIRES;
   const resource = '/' + cloud.bucket + '/' + key;
   const stringToSign = 'GET\n\n\n' + expires + '\n' + resource;
   const sig = b64(hmacSha1(utf8(cloudSk()), utf8(stringToSign)));
   let q = '?Expires=' + expires + '&OSSAccessKeyId=' + encodeURIComponent(cloudAk()) + '&Signature=' + encodeURIComponent(sig);
   if (cloudToken()) q += '&x-oss-security-token=' + encodeURIComponent(cloudToken());
   return u + q;
+}
+/* 列出瞬间照片对象（moments/ 前缀） */
+async function ossListPhotos() {
+  const date = new Date().toUTCString();
+  const query = 'max-keys=1000&prefix=moments/';
+  const resource = '/' + cloud.bucket + '/?' + query;
+  const headers = { 'x-oss-date': date, 'Authorization': ossSign('GET', '', date, resource) };
+  if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+  const res = await fetch(ossBase() + '/?' + query, { method: 'GET', headers });
+  if (!res.ok) throw new Error('列出照片失败 HTTP ' + res.status);
+  const xml = await res.text();
+  const keys = [];
+  const re = /<Key>([\s\S]*?)<\/Key>/g;
+  let m;
+  while ((m = re.exec(xml))) keys.push(m[1]);
+  return keys;
+}
+/* 给一张旧照片补上一年缓存头（原地复制 + 替换元数据，不重传数据、不压缩画质） */
+const PHOTO_MIME = { gif: 'image/gif', png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg', bmp: 'image/bmp', avif: 'image/avif' };
+async function ossFixOnePhoto(key) {
+  const date = new Date().toUTCString();
+  const resource = '/' + cloud.bucket + '/' + key;
+  const extra = { 'x-oss-copy-source': '/' + cloud.bucket + '/' + key, 'x-oss-metadata-directive': 'REPLACE' };
+  const ext = key.slice(key.lastIndexOf('.') + 1).toLowerCase();
+  const ct = PHOTO_MIME[ext] || 'application/octet-stream';
+  const headers = { 'x-oss-date': date, 'Content-Type': ct, 'Cache-Control': 'public, max-age=31536000, immutable', 'x-oss-copy-source': extra['x-oss-copy-source'], 'x-oss-metadata-directive': extra['x-oss-metadata-directive'] };
+  headers['Authorization'] = ossSign('PUT', ct, date, resource, extra);
+  if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+  const res = await fetch(ossBase() + '/' + key, { method: 'PUT', headers });
+  if (!res.ok) throw new Error('更新 ' + key + ' 失败 HTTP ' + res.status);
 }
 function setCloudState(s, msg) {
   const el = $('#cloudInd');
@@ -1172,6 +1211,21 @@ $('#saveSettings').addEventListener('click', () => {
 $('#cEnabled').addEventListener('change', () => { cloud.enabled = $('#cEnabled').checked; saveCloud(); refreshCloudStatus(); });
 $('#cloudUploadBtn').addEventListener('click', () => { readCloudFields(); cloudUpload(true); });
 $('#cloudDownloadBtn').addEventListener('click', () => { readCloudFields(); cloudDownload(true); });
+$('#cloudFixCacheBtn').addEventListener('click', async () => {
+  readCloudFields();
+  if (!cloudOk()) { showToast('请先开启云端同步并填写 AccessKey'); return; }
+  const btn = $('#cloudFixCacheBtn'), st = $('#cacheFixStatus');
+  btn.disabled = true; st.textContent = '正在优化…（照片多时稍等）';
+  try {
+    const keys = await ossListPhotos();
+    for (const k of keys) await ossFixOnePhoto(k);
+    st.textContent = '完成：已为 ' + keys.length + ' 张旧照片设置一年缓存（不重传、不压缩画质）';
+    showToast('照片缓存优化完成：' + keys.length + ' 张');
+  } catch (e) {
+    st.textContent = '优化失败：' + e.message;
+  }
+  btn.disabled = false;
+});
 $('#clearRecords').addEventListener('click', () => {
   if (!confirm('确定清空所有学习记录吗？此操作不可恢复。')) return;
   data.records = {}; persist(data); render();
@@ -1407,7 +1461,7 @@ async function uploadMomentPhotos(momentId, files) {
   for (let i = 0; i < files.length; i++) {
     const type = photoType(files[i]);
     const key = 'moments/' + momentId + '/' + (i + 1) + '.' + photoExt(type);
-    const res = await ossPutObject(key, files[i], type);
+    const res = await ossPutObject(key, files[i], type, { 'Cache-Control': 'public, max-age=31536000, immutable' });
     if (!res.ok) throw new Error('照片 ' + (i + 1) + ' 上传失败 HTTP ' + res.status);
     urls.push(ossBase() + '/' + key);
   }
