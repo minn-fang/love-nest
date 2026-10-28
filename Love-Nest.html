@@ -545,16 +545,19 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
         <div class="field"><label>Endpoint 地域</label><input type="text" id="cEndpoint" maxlength="60" placeholder="oss-cn-beijing.aliyuncs.com"></div>
       </div>
       <div class="field"><label>云端数据文件名</label><input type="text" id="cKey" maxlength="60" placeholder="data.json"></div>
+      <div class="field"><label>AccessKey ID（只存本设备，不上传 GitHub）</label><input type="text" id="cAk" maxlength="120" placeholder="LTAI5t…" autocomplete="off"></div>
+      <div class="field"><label>AccessKey Secret（只存本设备，不上传 GitHub）</label><input type="password" id="cSk" maxlength="120" placeholder="创建时显示的 Secret" autocomplete="new-password"></div>
       <div class="modal-ft">
         <button class="btn btn-ghost" id="cloudUploadBtn">上传到云端</button>
         <button class="btn btn-main he" id="cloudDownloadBtn">从云端下载</button>
       </div>
       <div class="hint-txt" id="cloudStatus">未开启云端同步</div>
-      <div class="hint-txt" id="keyStatus">AccessKey 未配置（见下方说明）</div>
+      <div class="hint-txt" id="keyStatus">AccessKey 未配置</div>
       <div class="settings-note">
-        AccessKey ID / Secret 不在页面上显示：用 VSCode 打开本文件，在文件顶部「云端配置」处填写（搜索 OSS_AK / OSS_SK 两个位置）。<br>
-        获取方式：阿里云控制台右上角头像 → AccessKey 管理（ram.console.aliyun.com/manage/ak）。Secret 只在创建时显示一次，忘记后无法再查看，只能重新创建；建议创建 RAM 子账号 Key，只授权本 Bucket 读写。<br>
-        使用前先到 OSS 控制台给本 Bucket 开启 CORS（来源 *，方法 GET / PUT / HEAD / OPTIONS，请求头 *，暴露头 ETag）。<br>
+        AccessKey 在这里填写后只保存在<b>当前设备</b>的浏览器本地，不会写进本文件、也不会出现在 GitHub 上。<br>
+        你和对象<b>各自在自己的设备上各输入一次</b>（把 Key 私下发给对方，如微信，不要发到 GitHub/群聊）。<br>
+        获取方式：阿里云控制台右上角头像 → AccessKey 管理（ram.console.aliyun.com/manage/ak）。Secret 只在创建时显示一次，忘记后只能重新创建；建议创建 RAM 子账号 Key，只授权本 Bucket 读写。<br>
+        使用前先到 OSS 控制台给本 Bucket 开启 CORS（来源 *，方法 GET / PUT / DELETE / POST / HEAD / OPTIONS，请求头 *，暴露头 ETag）。<br>
         云端只存一份整包快照：先「从云端下载」再修改再「上传到云端」，两人不要同时编辑互相覆盖。
       </div>
     </div>
@@ -690,29 +693,28 @@ function load() {
 }
 
 /* ============ 云端同步（阿里云 OSS） ============ */
-/* ============ 云端配置（AccessKey 只在这里填写，不会显示在页面里）============
+/* ============ 安全说明：本文件不含任何 AccessKey ============
+ * AccessKey 改由「设置 → 云端同步」面板填写，只保存在各自设备的浏览器本地（localStorage），
+ * 不会出现在本文件、也不会出现在 GitHub 上。你和对象各自在自己的设备上输入一次即可。
  * 获取方式：阿里云控制台右上角头像 → AccessKey 管理
  *           https://ram.console.aliyun.com/manage/ak
  * AccessKey ID 随时可见；Secret 只在创建时显示一次，忘记后无法查看，需重新创建。
  * 建议创建 RAM 子账号 Key，只授权本 Bucket 的读写权限，不要用主账号 Key。
  */
-const OSS_AK = 'LTAI5tAWo3kCo8YyoQVDKoef';      // ← 把 AccessKey ID 填在这里，例如 'LTAI5tXXXXXXXX'
-const OSS_SK = 'nVrIPk1UOz5jLCy5pyJsfEGXDcUrzG';      // ← 把 AccessKey Secret 填在这里
-const OSS_TOKEN = '';   // ← 使用 STS 临时凭证才填，RAM 永久 Key 留空
+const OSS_AK = '';      // 旧版占位：已弃用，不再在此填写（请在设置面板填）
+const OSS_SK = '';      // 旧版占位：已弃用，不再在此填写
+const OSS_TOKEN = '';   // 旧版占位：STS 临时凭证也请在设置面板的「云端」处管理（一般留空）
 const CLOUD_KEY = 'qlp-couple-LTAcloud-v1';
 function loadCloud() {
   try { const raw = localStorage.getItem(CLOUD_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
   return { enabled: false, bucket: 'our-love-nest', endpoint: 'oss-cn-beijing.aliyuncs.com', key: 'data.json', lastSync: '' };
 }
 let cloud = loadCloud();
-/* 兼容旧版本：之前填在设置里的密钥仍在浏览器本地，可继续用（同样不在页面显示） */
-const _oldCloud = (() => { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || '{}'); } catch (e) { return {}; } })();
-function cloudAk() { return OSS_AK || _oldCloud.ak || ''; }
-function cloudSk() { return OSS_SK || _oldCloud.sk || ''; }
-function cloudToken() { return OSS_TOKEN || _oldCloud.token || ''; }
+function cloudAk() { return cloud.ak || OSS_AK || ''; }
+function cloudSk() { return cloud.sk || OSS_SK || ''; }
+function cloudToken() { return cloud.token || OSS_TOKEN || ''; }
 function saveCloud() {
-  const legacy = (() => { try { return JSON.parse(localStorage.getItem(CLOUD_KEY) || '{}'); } catch (e) { return {}; } })();
-  try { localStorage.setItem(CLOUD_KEY, JSON.stringify({ enabled: cloud.enabled, bucket: cloud.bucket, endpoint: cloud.endpoint, key: cloud.key, lastSync: cloud.lastSync, ak: legacy.ak || '', sk: legacy.sk || '', token: legacy.token || '' })); } catch (e) {}
+  try { localStorage.setItem(CLOUD_KEY, JSON.stringify({ enabled: cloud.enabled, bucket: cloud.bucket, endpoint: cloud.endpoint, key: cloud.key, lastSync: cloud.lastSync, ak: cloud.ak || '', sk: cloud.sk || '', token: cloud.token || '' })); } catch (e) {}
 }
 function cloudOk() { return cloud.enabled && cloud.bucket && cloud.endpoint && cloudAk() && cloudSk(); }
 
@@ -808,6 +810,20 @@ async function ossDeleteObject(key) {
   if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
   return fetch(ossBase() + '/' + key, { method: 'DELETE', headers });
 }
+/* 为照片生成长期有效的签名访问链接：Bucket 设为私有后照片也能正常显示/下载 */
+function signPhotoUrl(u) {
+  if (!cloudOk() || u.indexOf('?') >= 0 || u.indexOf('data:') === 0) return u;
+  const base = ossBase() + '/';
+  if (u.indexOf(base) !== 0) return u;
+  const key = u.slice(base.length);
+  const expires = Math.floor(Date.now() / 1000) + 3650 * 24 * 3600; // 10 年有效
+  const resource = '/' + cloud.bucket + '/' + key;
+  const stringToSign = 'GET\n\n\n' + expires + '\n' + resource;
+  const sig = b64(hmacSha1(utf8(cloudSk()), utf8(stringToSign)));
+  let q = '?Expires=' + expires + '&OSSAccessKeyId=' + encodeURIComponent(cloudAk()) + '&Signature=' + encodeURIComponent(sig);
+  if (cloudToken()) q += '&x-oss-security-token=' + encodeURIComponent(cloudToken());
+  return u + q;
+}
 function setCloudState(s, msg) {
   const el = $('#cloudInd');
   if (el) {
@@ -884,13 +900,14 @@ function updateKeyStatus() {
   const el = $('#keyStatus');
   if (!el) return;
   const okKey = !!(cloudAk() && cloudSk());
-  el.textContent = okKey ? 'AccessKey 已配置（在文件顶部填写，页面不显示）' : 'AccessKey 未配置：用 VSCode 在文件顶部填 OSS_AK / OSS_SK';
+  el.textContent = okKey ? '✓ AccessKey 已配置（仅保存在本设备）' : 'AccessKey 未配置：在下方填写并点「保存设置」';
   el.style.color = okKey ? '#3FA98A' : '#E0618A';
 }
 function fillCloudUI() {
   $('#cEnabled').checked = !!cloud.enabled;
   $('#cBucket').value = cloud.bucket; $('#cEndpoint').value = cloud.endpoint;
   $('#cKey').value = cloud.key || 'data.json';
+  $('#cAk').value = cloudAk(); $('#cSk').value = cloudSk();
   updateKeyStatus();
 }
 function readCloudFields() {
@@ -898,6 +915,8 @@ function readCloudFields() {
   cloud.bucket = $('#cBucket').value.trim();
   cloud.endpoint = $('#cEndpoint').value.trim();
   cloud.key = $('#cKey').value.trim() || 'data.json';
+  cloud.ak = $('#cAk').value.trim();
+  cloud.sk = $('#cSk').value.trim();
   saveCloud();
 }
 
@@ -1337,10 +1356,11 @@ $('#noteBox').addEventListener('click', e => {
 function renderMomentCard(m) {
   const he = m.who === 'B';
   const name = esc(m.who === 'A' ? data.couple.nameA : data.couple.nameB);
-  const photos = (m.photos || []).map((u, i) =>
-    '<div class="moment-photo"><img src="' + u + '" alt="瞬间照片 ' + (i + 1) + '" loading="lazy" onerror="this.closest(\'.moment-photo\').style.display=\'none\'">' +
-    '<a class="save" href="' + u + '" target="_blank" rel="noopener" aria-label="打开大图保存" title="打开大图保存"><svg class="i" style="width:16px;height:16px"><use href="#i-download" xlink:href="#i-download"/></svg></a></div>'
-  ).join('');
+  const photos = (m.photos || []).map((u, i) => {
+    const src = signPhotoUrl(u);
+    return '<div class="moment-photo"><img src="' + src + '" alt="瞬间照片 ' + (i + 1) + '" loading="lazy" onerror="this.closest(\'.moment-photo\').style.display=\'none\'">' +
+    '<a class="save" href="' + src + '" target="_blank" rel="noopener" aria-label="打开大图保存" title="打开大图保存"><svg class="i" style="width:16px;height:16px"><use href="#i-download" xlink:href="#i-download"/></svg></a></div>';
+  }).join('');
   return '<div class="moment-card' + (he ? ' he' : '') + '">' +
     '<div class="head">' + MASCOT[m.who] +
     '<div><div class="nm">' + name + '</div><div class="dt">' + dateLabel(m.date) + ' ' + esc(m.time || '') + '</div></div>' +
