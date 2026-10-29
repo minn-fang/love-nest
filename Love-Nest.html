@@ -215,14 +215,16 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .replies .nrep.he .nrep-who{color:#3FA98A}
 .replies .nrep .nrep-tx{flex:1 1 auto;min-width:0;color:var(--ink)}
 .replies .nrep .nrep-tm{font-size:10.5px;color:#C9BDC2;flex:none}
+.replies .nrep .nrep-del{flex:none;border:none;background:none;color:#D9C4CB;font-size:13px;line-height:1;padding:2px 3px;border-radius:6px;cursor:pointer;transition:.2s}
+.replies .nrep .nrep-del:hover{color:#E0618A;background:#FFE9F0}
 .nrep-btn{flex:none;font-size:12px;color:#C49BA9;background:none;border:none;padding:4px 6px;border-radius:8px;cursor:pointer;transition:.2s}
 .nrep-btn:hover{color:#E0618A;background:#FFE9F0}
 .note-card .nrep-btn{margin-left:2px}
 .nrep-row{display:flex;gap:6px;margin-top:8px;align-items:center}
 .nrep-row .who-toggle{background:#FFF0F4;padding:2px;border-radius:999px}
 .nrep-row .who-toggle .who-btn{font-size:11px;padding:3px 10px}
-.nrep-row input{flex:1;min-width:0;border:1.5px solid #F3D8E2;background:#fff;border-radius:999px;padding:6px 12px;font-size:16px;color:var(--ink);outline:none;transition:.2s}
-.nrep-row input:focus{border-color:#FF8BA7}
+.nrep-row textarea{flex:1;min-width:0;min-height:60px;max-height:150px;border:1.5px solid #F3D8E2;background:#fff;border-radius:14px;padding:8px 12px;font-size:16px;line-height:1.55;color:var(--ink);outline:none;resize:none;overflow-y:auto;transition:.2s}
+.nrep-row textarea:focus{border-color:#FF8BA7}
 .nrep-row .nrep-send{flex:none;background:var(--pink);color:#fff;font-size:12px;font-weight:700;border:none;border-radius:999px;padding:6px 13px;cursor:pointer;transition:.2s}
 .note-card.he .nrep-row .nrep-send{background:var(--mint)}
 .nrep-row .nrep-send:hover{filter:brightness(.95)}
@@ -631,10 +633,7 @@ function moodSvg(k) {
 }
 
 /* ============ 头像（兔兔=小熊照片 / 熊熊=小狗照片） ============ */
-const MASCOT = {
-  A: '<img class="mascot mascot-img" src="https://our-love-nest.oss-cn-beijing.aliyuncs.com/%E5%B0%8F%E7%86%8A%E7%86%8A.jpg" alt="" aria-hidden="true" onerror="this.style.visibility=\'hidden\'">',
-  B: '<img class="mascot mascot-img" src="https://our-love-nest.oss-cn-beijing.aliyuncs.com/%E5%B0%8F%E7%8B%97%E7%8B%97.jpg" alt="" aria-hidden="true" onerror="this.style.visibility=\'hidden\'">'
-};
+/* 头像改为运行时函数（见 mascotImg），支持私有桶签名访问 */
 
 /* ============ 城市坐标与直线距离 ============ */
 const CITIES = {
@@ -856,6 +855,14 @@ async function ossFixOnePhoto(key) {
   const res = await fetch(ossBase() + '/' + key, { method: 'PUT', headers });
   if (!res.ok) throw new Error('更新 ' + key + ' 失败 HTTP ' + res.status);
 }
+/* 头像（兔兔/熊熊）：每次渲染走签名链接，Bucket 改为私有后头像也能正常显示 */
+const MASCOT_URLS = {
+  A: 'https://our-love-nest.oss-cn-beijing.aliyuncs.com/%E5%B0%8F%E7%86%8A%E7%86%8A.jpg',
+  B: 'https://our-love-nest.oss-cn-beijing.aliyuncs.com/%E5%B0%8F%E7%8B%97%E7%8B%97.jpg'
+};
+function mascotImg(who) {
+  return '<img class="mascot mascot-img" src="' + signPhotoUrl(MASCOT_URLS[who]) + '" alt="" aria-hidden="true" onerror="this.style.visibility=\'hidden\'">';
+}
 function setCloudState(s, msg) {
   const el = $('#cloudInd');
   if (el) {
@@ -1040,7 +1047,7 @@ function colHTML(who) {
   let list;
   if (recs.length) list = recs.map(entryHTML).join('');
   else list = '<div class="empty"><svg class="i"><use href="#i-book" xlink:href="#i-book"/></svg><p>这一天还没有 ' + name + ' 的学习记录</p><p class="hint">点右上角 + 添加一条</p></div>';
-  return '<div class="pcard' + (he ? ' he' : '') + '"><div class="head">' + MASCOT[who] +
+  return '<div class="pcard' + (he ? ' he' : '') + '"><div class="head">' + mascotImg(who) +
     '<div><div class="nm">' + name + '</div><div class="tt">今日已学 ' + mins + ' 分钟</div></div>' +
     '<button class="add" data-add="' + who + '" aria-label="给 ' + name + ' 添加记录"><svg class="i" style="width:19px;height:19px"><use href="#i-plus" xlink:href="#i-plus"/></svg></button></div>' +
     '<div class="list">' + list + '</div></div>';
@@ -1098,7 +1105,7 @@ $$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeMask(
 function setWhoUI() {
   $('#whoToggle').innerHTML = ['A', 'B'].map(w => {
     const name = esc(w === 'A' ? data.couple.nameA : data.couple.nameB);
-    return '<button class="who-btn' + (whoSel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-who="' + w + '">' + MASCOT[w] + '<span>' + name + '</span></button>';
+    return '<button class="who-btn' + (whoSel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-who="' + w + '">' + mascotImg(w) + '<span>' + name + '</span></button>';
   }).join('');
   $('#saveAdd').className = 'btn btn-main' + (whoSel === 'B' ? ' he' : '');
 }
@@ -1274,19 +1281,20 @@ function renderMemo() {
 function noteCardHTML(n) {
   const he = n.who === 'B';
   const name = esc(n.who === 'A' ? data.couple.nameA : data.couple.nameB);
-  const replies = (n.replies || []).map(r => {
+  const replies = (n.replies || []).map((r, i) => {
     const rh = r.who === 'B';
     const rn = esc(r.who === 'A' ? data.couple.nameA : data.couple.nameB);
     return '<div class="nrep' + (rh ? ' he' : '') + '"><b class="nrep-who">' + rn + '</b><span class="nrep-tx">' + esc(r.content) + '</span>' +
-      '<span class="nrep-tm">' + dateLabel(r.date) + ' ' + esc(r.time || '') + '</span></div>';
+      '<span class="nrep-tm">' + dateLabel(r.date) + ' ' + esc(r.time || '') + '</span>' +
+      '<button class="nrep-del" data-nrepl-del="' + n.id + '" data-idx="' + i + '" aria-label="删除这条回复" title="删除这条回复">×</button></div>';
   }).join('');
   const repl = replies ? '<div class="replies">' + replies + '</div>' : '';
   const repOpen = replyOpenNote === n.id;
   const replyRow = repOpen
     ? '<div class="nrep-row"><div class="who-toggle" id="nrepWho' + n.id + '"></div>' +
-      '<input type="text" maxlength="100" placeholder="回复…"><button class="nrep-send" data-nsend="' + n.id + '">发送</button></div>'
+      '<textarea maxlength="200" rows="2" placeholder="回复…"></textarea><button class="nrep-send" data-nsend="' + n.id + '">发送</button></div>'
     : '';
-  return '<div class="note-card' + (he ? ' he' : '') + '">' + MASCOT[n.who] +
+  return '<div class="note-card' + (he ? ' he' : '') + '">' + mascotImg(n.who) +
     '<div class="bd"><div class="meta"><b>' + name + '</b><span class="tm">' + dateLabel(n.date) + ' ' + esc(n.time) + '</span>' +
     '<button class="nrep-btn" data-nreply="' + n.id + '" aria-label="回复这条心里话">回复</button>' +
     '<button class="del" data-ndel="' + n.id + '" aria-label="删除这条心里话"><svg class="i" style="width:15px;height:15px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
@@ -1308,7 +1316,7 @@ function renderWhoToggle(boxId, sel) {
   const box = $('#' + boxId); if (!box) return;
   box.innerHTML = ['A', 'B'].map(w => {
     const name = esc(w === 'A' ? data.couple.nameA : data.couple.nameB);
-    return '<button class="who-btn' + (sel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-ww="' + w + '" data-box="' + boxId + '">' + MASCOT[w] + '<span>' + name + '</span></button>';
+    return '<button class="who-btn' + (sel === w ? (w === 'A' ? ' on-a' : ' on-b') : '') + '" data-ww="' + w + '" data-box="' + boxId + '">' + mascotImg(w) + '<span>' + name + '</span></button>';
   }).join('');
 }
 document.addEventListener('click', e => {
@@ -1378,15 +1386,24 @@ $('#noteBox').addEventListener('click', e => {
     replyOpenNote = replyOpenNote === id ? null : id;
     render();
     if (replyOpenNote) {
-      const inp = $('#noteBox .nrep-row input');
+      const inp = $('#noteBox .nrep-row textarea');
       if (inp) inp.focus();
+    }
+    return;
+  }
+  const rd = e.target.closest('[data-nrepl-del]');
+  if (rd) {
+    const note = (data.notes || []).find(x => x.id === rd.dataset.nreplDel);
+    if (note && note.replies && note.replies[+rd.dataset.idx]) {
+      note.replies.splice(+rd.dataset.idx, 1);
+      persist(data); render();
     }
     return;
   }
   const sb = e.target.closest('[data-nsend]');
   if (sb) {
     const card = sb.closest('.note-card');
-    const input = card.querySelector('.nrep-row input');
+    const input = card.querySelector('.nrep-row textarea');
     const content = (input.value || '').trim();
     if (!content) { showToast('先写点回复内容呀'); return; }
     const now = new Date(), hh = pad(now.getHours()), mm = pad(now.getMinutes());
@@ -1399,6 +1416,11 @@ $('#noteBox').addEventListener('click', e => {
     showToast('回复已送达');
   }
 });
+/* 回复输入框自动增高，方便边写边看前面的内容 */
+document.addEventListener('input', e => {
+  const ta = e.target.closest('.nrep-row textarea');
+  if (ta && ta.scrollHeight > 0) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 150) + 'px'; }
+});
 
 /* ============ 渲染：瞬间 ============ */
 function renderMomentCard(m) {
@@ -1410,7 +1432,7 @@ function renderMomentCard(m) {
     '<a class="save" href="' + src + '" target="_blank" rel="noopener" aria-label="打开大图保存" title="打开大图保存"><svg class="i" style="width:16px;height:16px"><use href="#i-download" xlink:href="#i-download"/></svg></a></div>';
   }).join('');
   return '<div class="moment-card' + (he ? ' he' : '') + '">' +
-    '<div class="head">' + MASCOT[m.who] +
+    '<div class="head">' + mascotImg(m.who) +
     '<div><div class="nm">' + name + '</div><div class="dt">' + dateLabel(m.date) + ' ' + esc(m.time || '') + '</div></div>' +
     '<button class="del" data-mdel2="' + m.id + '" aria-label="删除这个瞬间"><svg class="i" style="width:16px;height:16px"><use href="#i-trash" xlink:href="#i-trash"/></svg></button></div>' +
     (m.content ? '<div class="tx">' + esc(m.content) + '</div>' : '') +
