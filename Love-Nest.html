@@ -558,6 +558,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <div class="hint-txt" id="keyStatus">AccessKey 未配置</div>
       <button class="btn btn-ghost" id="cloudFixCacheBtn" style="margin-top:4px">优化旧照片缓存（一年）</button>
       <div class="hint-txt" id="cacheFixStatus"></div>
+      <button class="btn btn-ghost" id="cloudCleanBtn" style="margin-top:4px">清理云端孤儿照片</button>
+      <div class="hint-txt" id="cleanStatus"></div>
       <div class="settings-note">
         AccessKey 在这里填写后只保存在<b>当前设备</b>的浏览器本地，不会写进本文件、也不会出现在 GitHub 上。<br>
         你和对象<b>各自在自己的设备上各输入一次</b>（把 Key 私下发给对方，如微信，不要发到 GitHub/群聊）。<br>
@@ -841,6 +843,29 @@ function momentPhotoKeys() {
     if (u.indexOf(base) === 0) keys.add(u.slice(base.length));
   }));
   return Array.from(keys);
+}
+/* 列出云端全部瞬间照片对象（moments/ 前缀，自动分页；需要 RAM 策略含 oss:ListObjects） */
+async function ossListPhotos() {
+  const keys = [];
+  let marker = '';
+  for (;;) {
+    const date = new Date().toUTCString();
+    let q = 'max-keys=1000&prefix=moments/';
+    if (marker) q = 'marker=' + marker + '&' + q;
+    const resource = '/' + cloud.bucket + '/?' + q;
+    const headers = { 'x-oss-date': date, 'Authorization': ossSign('GET', '', date, resource) };
+    if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+    const res = await fetch(ossBase() + '/?' + q, { method: 'GET', headers });
+    if (!res.ok) throw new Error('列出照片失败 HTTP ' + res.status + '（请先在 RAM 策略添加 oss:ListObjects）');
+    const xml = await res.text();
+    const re = /<Key>([\s\S]*?)<\/Key>/g;
+    let m;
+    while ((m = re.exec(xml))) keys.push(m[1]);
+    const nm = /<NextMarker>([\s\S]*?)<\/NextMarker>/.exec(xml);
+    if (xml.indexOf('<IsTruncated>true</IsTruncated>') < 0 || !nm) break;
+    marker = nm[1];
+  }
+  return keys;
 }
 /* 给一张旧照片补上一年缓存头（原地复制 + 替换元数据，不重传数据、不压缩画质） */
 const PHOTO_MIME = { gif: 'image/gif', png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg', bmp: 'image/bmp', avif: 'image/avif' };
@@ -1225,6 +1250,30 @@ $('#cloudFixCacheBtn').addEventListener('click', async () => {
     showToast('照片缓存优化完成：' + keys.length + ' 张');
   } catch (e) {
     st.textContent = '优化失败：' + e.message;
+  }
+  btn.disabled = false;
+});
+$('#cloudCleanBtn').addEventListener('click', async () => {
+  readCloudFields();
+  if (!cloudOk()) { showToast('请先开启云端同步并填写 AccessKey'); return; }
+  const btn = $('#cloudCleanBtn'), st = $('#cleanStatus');
+  btn.disabled = true; st.textContent = '正在扫描云端照片…（需 RAM 策略含 oss:ListObjects）';
+  try {
+    const all = await ossListPhotos();
+    const ref = new Set(momentPhotoKeys());
+    const orphans = all.filter(k => !ref.has(k));
+    if (!orphans.length) { st.textContent = '云端干净：云端共 ' + all.length + ' 张，页面引用 ' + ref.size + ' 张，无孤儿照片'; return; }
+    if (!confirm('发现 ' + orphans.length + ' 张页面未引用的孤儿照片（云端累计占用），确定删除吗？删除后无法恢复。')) {
+      st.textContent = '已取消，未删除任何照片'; return;
+    }
+    let ok = 0;
+    for (const k of orphans) {
+      try { await ossDeleteObject(k); ok++; } catch (e) {}
+    }
+    st.textContent = '完成：已删除 ' + ok + ' 张孤儿照片' + (ok < orphans.length ? '，' + (orphans.length - ok) + ' 张删除失败（检查 CORS 是否含 DELETE）' : '');
+    showToast('孤儿照片清理完成：' + ok + ' 张');
+  } catch (e) {
+    st.textContent = '清理失败：' + e.message;
   }
   btn.disabled = false;
 });
