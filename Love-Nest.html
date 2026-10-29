@@ -789,6 +789,21 @@ function ossSign(method, contentType, date, resource, extraOssHeaders) {
   const sig = b64(hmacSha1(utf8(cloudSk()), utf8(stringToSign)));
   return 'OSS ' + cloudAk() + ':' + sig;
 }
+/* 直接用给定的完整 StringToSign 重新签名（OSS 在 SignatureDoesNotMatch 错误里会返回它期望的签名串） */
+function ossSignFromString(sts) {
+  const sig = b64(hmacSha1(utf8(cloudSk()), utf8(sts)));
+  return 'OSS ' + cloudAk() + ':' + sig;
+}
+/* 清洗 OSS 错误响应里的 StringToSign（XML 转义 + 字面换行还原） */
+function cleanSts(s) {
+  return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+          .replace(/&#10;/g, '\n').replace(/\\n/g, '\n');
+}
+/* 取 StringToSign 最后一行（即 CanonicalizedResource，用于排障展示） */
+function stsResource(s) {
+  const i = s.lastIndexOf('\n');
+  return i >= 0 ? s.slice(i + 1) : s;
+}
 function ossBase() { return 'https://' + cloud.bucket + '.' + cloud.endpoint; }
 async function ossReq(method, body) {
   const date = new Date().toUTCString();
@@ -857,26 +872,34 @@ async function ossListPhotos() {
       mk + 'max-keys=1000&prefix=moments/',
       mk + 'max-keys=1000&prefix=' + enc('moments/')
     ];
-    let ok = false, xml = '', lastErr = '', lastCode = '';
+    let ok = false, xml = '', debug = '';
     for (const q of candidates) {
+      const url = ossBase() + '/?' + q;
       const resource = '/' + cloud.bucket + '/?' + q;
       const headers = { 'x-oss-date': date, 'Authorization': ossSign('GET', '', date, resource) };
       if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
-      const res = await fetch(ossBase() + '/?' + q, { method: 'GET', headers });
+      let res = await fetch(url, { method: 'GET', headers });
       if (res.ok) { xml = await res.text(); ok = true; break; }
-      let code = '';
-      try { const b = await res.text(); const c = /<Code>([\s\S]*?)<\/Code>/.exec(b); if (c) code = c[1]; } catch (e2) {}
-      lastErr = 'HTTP ' + res.status + (code ? ' ' + code : '');
-      lastCode = code;
+      let body = '';
+      try { body = await res.text(); } catch (e2) {}
+      /* 抄作业：OSS 签名错误时会返回它期望的 StringToSign，直接用它重签再试一次 */
+      const sts = /<StringToSign>([\s\S]*?)<\/StringToSign>/.exec(body);
+      if (sts && sts[1]) {
+        const clean = cleanSts(sts[1]);
+        const headers2 = { 'x-oss-date': date, 'Authorization': ossSignFromString(clean) };
+        if (cloudToken()) headers2['x-oss-security-token'] = cloudToken();
+        res = await fetch(url, { method: 'GET', headers: headers2 });
+        if (res.ok) { xml = await res.text(); ok = true; break; }
+        let body2 = '';
+        try { body2 = await res.text(); } catch (e3) {}
+        const c2 = /<Code>([\s\S]*?)<\/Code>/.exec(body2);
+        debug = '自动对齐重签仍失败（' + (c2 ? c2[1] : 'HTTP ' + res.status) + '）OSS 期望签名资源：' + stsResource(clean);
+      } else {
+        const c1 = /<Code>([\s\S]*?)<\/Code>/.exec(body);
+        debug = (c1 ? 'OSS 错误码 ' + c1[1] : 'HTTP ' + res.status);
+      }
     }
-    if (!ok) {
-      let hint = '';
-      if (lastCode === 'AccessDenied') hint = '（OSS 错误码：AccessDenied → 策略未生效：请确认 RAM 策略已保存、包含 oss:ListObjects、且页面填的 AK 就是该子账号）';
-      else if (lastCode === 'SignatureDoesNotMatch') hint = '（OSS 错误码：SignatureDoesNotMatch → 签名问题，请把此提示发我排查）';
-      else if (lastCode === 'InvalidAccessKeyId') hint = '（OSS 错误码：InvalidAccessKeyId → 页面填的 AccessKey ID 无效，请检查设置里的 AK）';
-      else hint = '（OSS 返回：' + lastErr + '）';
-      throw new Error('列出照片失败 ' + hint);
-    }
+    if (!ok) throw new Error('列出照片失败（' + debug + '）');
     const re = /<Key>([\s\S]*?)<\/Key>/g;
     let m;
     while ((m = re.exec(xml))) keys.push(m[1]);
