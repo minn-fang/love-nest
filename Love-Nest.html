@@ -1394,6 +1394,7 @@ $('#noteBox').addEventListener('click', e => {
   }
   const rd = e.target.closest('[data-nrepl-del]');
   if (rd) {
+    if (!window.confirm('确定删除这条回复吗？删除后无法恢复。')) return;
     const note = (data.notes || []).find(x => x.id === rd.dataset.nreplDel);
     if (note && note.replies && note.replies[+rd.dataset.idx]) {
       note.replies.splice(+rd.dataset.idx, 1);
