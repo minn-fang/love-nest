@@ -844,20 +844,39 @@ function momentPhotoKeys() {
   }));
   return Array.from(keys);
 }
-/* 列出云端全部瞬间照片对象（moments/ 前缀，自动分页；需要 RAM 策略含 oss:ListObjects） */
+/* 列出云端全部瞬间照片对象（moments/ 前缀，自动分页；需要 RAM 策略含 oss:ListObjects。
+ * 自动尝试「原始」与「URL 编码」两种签名格式（OSS 对查询参数签名存在编码差异），保证能通。 */
 async function ossListPhotos() {
   const keys = [];
   let marker = '';
+  const enc = encodeURIComponent;
   for (;;) {
     const date = new Date().toUTCString();
-    let q = 'max-keys=1000&prefix=moments/';
-    if (marker) q = 'marker=' + marker + '&' + q;
-    const resource = '/' + cloud.bucket + '/?' + q;
-    const headers = { 'x-oss-date': date, 'Authorization': ossSign('GET', '', date, resource) };
-    if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
-    const res = await fetch(ossBase() + '/?' + q, { method: 'GET', headers });
-    if (!res.ok) throw new Error('列出照片失败 HTTP ' + res.status + '：请确认 RAM 策略已「保存」且包含 oss:ListObjects（保存后等 1-2 分钟生效），再重试');
-    const xml = await res.text();
+    const mk = marker ? 'marker=' + enc(marker) + '&' : '';
+    const candidates = [
+      mk + 'max-keys=1000&prefix=moments/',
+      mk + 'max-keys=1000&prefix=' + enc('moments/')
+    ];
+    let ok = false, xml = '', lastErr = '', lastCode = '';
+    for (const q of candidates) {
+      const resource = '/' + cloud.bucket + '/?' + q;
+      const headers = { 'x-oss-date': date, 'Authorization': ossSign('GET', '', date, resource) };
+      if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+      const res = await fetch(ossBase() + '/?' + q, { method: 'GET', headers });
+      if (res.ok) { xml = await res.text(); ok = true; break; }
+      let code = '';
+      try { const b = await res.text(); const c = /<Code>([\s\S]*?)<\/Code>/.exec(b); if (c) code = c[1]; } catch (e2) {}
+      lastErr = 'HTTP ' + res.status + (code ? ' ' + code : '');
+      lastCode = code;
+    }
+    if (!ok) {
+      let hint = '';
+      if (lastCode === 'AccessDenied') hint = '（OSS 错误码：AccessDenied → 策略未生效：请确认 RAM 策略已保存、包含 oss:ListObjects、且页面填的 AK 就是该子账号）';
+      else if (lastCode === 'SignatureDoesNotMatch') hint = '（OSS 错误码：SignatureDoesNotMatch → 签名问题，请把此提示发我排查）';
+      else if (lastCode === 'InvalidAccessKeyId') hint = '（OSS 错误码：InvalidAccessKeyId → 页面填的 AccessKey ID 无效，请检查设置里的 AK）';
+      else hint = '（OSS 返回：' + lastErr + '）';
+      throw new Error('列出照片失败 ' + hint);
+    }
     const re = /<Key>([\s\S]*?)<\/Key>/g;
     let m;
     while ((m = re.exec(xml))) keys.push(m[1]);
