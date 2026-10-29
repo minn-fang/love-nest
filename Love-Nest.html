@@ -220,11 +220,12 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .nrep-btn{flex:none;font-size:12px;color:#C49BA9;background:none;border:none;padding:4px 6px;border-radius:8px;cursor:pointer;transition:.2s}
 .nrep-btn:hover{color:#E0618A;background:#FFE9F0}
 .note-card .nrep-btn{margin-left:2px}
-.nrep-row{display:flex;gap:6px;margin-top:8px;align-items:center}
-.nrep-row .who-toggle{background:#FFF0F4;padding:2px;border-radius:999px}
+.nrep-row{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.nrep-row .who-toggle{background:#FFF0F4;padding:2px;border-radius:999px;align-self:flex-start}
 .nrep-row .who-toggle .who-btn{font-size:11px;padding:3px 10px}
-.nrep-row textarea{flex:1;min-width:0;min-height:60px;max-height:150px;border:1.5px solid #F3D8E2;background:#fff;border-radius:14px;padding:8px 12px;font-size:16px;line-height:1.55;color:var(--ink);outline:none;resize:none;overflow-y:auto;transition:.2s}
-.nrep-row textarea:focus{border-color:#FF8BA7}
+.nrep-row .nrep-line{display:flex;gap:6px;align-items:flex-end}
+.nrep-row .nrep-line textarea{flex:1;min-width:0;min-height:60px;max-height:150px;border:1.5px solid #F3D8E2;background:#fff;border-radius:14px;padding:8px 12px;font-size:16px;line-height:1.55;color:var(--ink);outline:none;resize:none;overflow-y:auto;transition:.2s}
+.nrep-row .nrep-line textarea:focus{border-color:#FF8BA7}
 .nrep-row .nrep-send{flex:none;background:var(--pink);color:#fff;font-size:12px;font-weight:700;border:none;border-radius:999px;padding:6px 13px;cursor:pointer;transition:.2s}
 .note-card.he .nrep-row .nrep-send{background:var(--mint)}
 .nrep-row .nrep-send:hover{filter:brightness(.95)}
@@ -823,7 +824,7 @@ function signPhotoUrl(u) {
   if (!cloudOk() || u.indexOf('?') >= 0 || u.indexOf('data:') === 0) return u;
   const base = ossBase() + '/';
   if (u.indexOf(base) !== 0) return u;
-  const key = u.slice(base.length);
+  const key = decodeURIComponent(u.slice(base.length)); // 对象名可能是中文（百分号编码），签名必须用解码后的真实 key
   const expires = PHOTO_SIGN_EXPIRES;
   const resource = '/' + cloud.bucket + '/' + key;
   const stringToSign = 'GET\n\n\n' + expires + '\n' + resource;
@@ -1292,7 +1293,7 @@ function noteCardHTML(n) {
   const repOpen = replyOpenNote === n.id;
   const replyRow = repOpen
     ? '<div class="nrep-row"><div class="who-toggle" id="nrepWho' + n.id + '"></div>' +
-      '<textarea maxlength="200" rows="2" placeholder="回复…"></textarea><button class="nrep-send" data-nsend="' + n.id + '">发送</button></div>'
+      '<div class="nrep-line"><textarea maxlength="200" rows="2" placeholder="回复…"></textarea><button class="nrep-send" data-nsend="' + n.id + '">发送</button></div></div>'
     : '';
   return '<div class="note-card' + (he ? ' he' : '') + '">' + mascotImg(n.who) +
     '<div class="bd"><div class="meta"><b>' + name + '</b><span class="tm">' + dateLabel(n.date) + ' ' + esc(n.time) + '</span>' +
