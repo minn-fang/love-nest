@@ -856,7 +856,7 @@ async function ossListPhotos() {
     const headers = { 'x-oss-date': date, 'Authorization': ossSign('GET', '', date, resource) };
     if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
     const res = await fetch(ossBase() + '/?' + q, { method: 'GET', headers });
-    if (!res.ok) throw new Error('列出照片失败 HTTP ' + res.status + '（请先在 RAM 策略添加 oss:ListObjects）');
+    if (!res.ok) throw new Error('列出照片失败 HTTP ' + res.status + '：请确认 RAM 策略已「保存」且包含 oss:ListObjects（保存后等 1-2 分钟生效），再重试');
     const xml = await res.text();
     const re = /<Key>([\s\S]*?)<\/Key>/g;
     let m;
