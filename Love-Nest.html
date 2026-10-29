@@ -560,6 +560,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <div class="hint-txt" id="cacheFixStatus"></div>
       <button class="btn btn-ghost" id="cloudCleanBtn" style="margin-top:4px">清理云端孤儿照片</button>
       <div class="hint-txt" id="cleanStatus"></div>
+      <div class="hint-txt" id="buildInfo" style="color:#b0a0c8"></div>
       <div class="settings-note">
         AccessKey 在这里填写后只保存在<b>当前设备</b>的浏览器本地，不会写进本文件、也不会出现在 GitHub 上。<br>
         你和对象<b>各自在自己的设备上各输入一次</b>（把 Key 私下发给对方，如微信，不要发到 GitHub/群聊）。<br>
@@ -837,6 +838,17 @@ async function ossDeleteObject(key) {
 /* 为照片生成长期有效的签名访问链接：Bucket 设为私有后照片也能正常显示/下载。
  * 过期时间用固定常量，保证同一张照片的签名 URL 恒定不变，浏览器才能按 URL 缓存（否则每次都重新下载）。 */
 const PHOTO_SIGN_EXPIRES = Math.floor(Date.UTC(2036, 0, 1, 0, 0, 0) / 1000);
+const BUILD = 'v22-20261029';
+/* 设置面板自检：显示内核版本、签名是否固定、是否填了临时凭证（一眼判断线上是不是最新版） */
+function updateBuildInfo() {
+  const el = $('#buildInfo'); if (!el) return;
+  const ak = (cloud.ak || '').trim();
+  const fixed = PHOTO_SIGN_EXPIRES === 2082758400;
+  let warn = '';
+  if (ak.indexOf('TMP.') === 0) warn = ' ！当前填的是临时凭证（TMP 开头）：会过期、照片可能加载失败，请换成 RAM 长期 AccessKey（LTAI 开头）';
+  else if (!ak) warn = ' 未填写 AccessKey';
+  el.textContent = '内核 ' + BUILD + ' · 照片签名固定至 ' + new Date(PHOTO_SIGN_EXPIRES * 1000).toISOString().slice(0, 10) + (fixed ? '（缓存正常）' : '（异常！）') + warn;
+}
 function signPhotoUrl(u) {
   if (!cloudOk() || u.indexOf('?') >= 0 || u.indexOf('data:') === 0) return u;
   const base = ossBase() + '/';
@@ -1254,6 +1266,7 @@ $('#openSettings').addEventListener('click', () => {
   distHintText();
   fillCloudUI();
   refreshCloudStatus();
+  updateBuildInfo();
   openMask('setMask');
 });
 $('#sCityA').addEventListener('input', distHintText);
