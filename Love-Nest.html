@@ -556,12 +556,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       </div>
       <div class="hint-txt" id="cloudStatus">未开启云端同步</div>
       <div class="hint-txt" id="keyStatus">AccessKey 未配置</div>
-      <button class="btn btn-ghost" id="cloudFixCacheBtn" style="margin-top:4px">优化旧照片缓存（一年）</button>
-      <div class="hint-txt" id="cacheFixStatus"></div>
-      <button class="btn btn-ghost" id="cacheCheckBtn" style="margin-top:4px">检查照片缓存头</button>
-      <div class="hint-txt" id="cacheCheckStatus"></div>
-      <button class="btn btn-ghost" id="cloudCleanBtn" style="margin-top:4px">清理云端孤儿照片</button>
-      <div class="hint-txt" id="cleanStatus"></div>
+      <button class="btn btn-ghost" id="photoCacheInfoBtn" style="margin-top:4px">照片本地缓存</button>
+      <div class="hint-txt" id="photoCacheInfo"></div>
       <div class="hint-txt" id="buildInfo" style="color:#b0a0c8"></div>
       <div class="settings-note">
         AccessKey 在这里填写后只保存在<b>当前设备</b>的浏览器本地，不会写进本文件、也不会出现在 GitHub 上。<br>
@@ -924,36 +920,86 @@ async function ossListPhotos() {
   }
   return keys;
 }
-/* 检查照片缓存头：HEAD 逐个照片，统计有多少张已有一年缓存（判断是不是“缺头导致反复全量下载”） */
-async function ossCheckCache() {
-  const st = $('#cacheCheckStatus');
-  if (!st) return;
-  st.textContent = '正在检查照片缓存头…';
-  const keys = momentPhotoKeys();
-  if (!keys.length) { st.textContent = '没有可检查的照片'; return; }
-  let ok = 0, bad = 0, fail = 0;
-  const date = new Date().toUTCString();
-  const pool = keys.slice();
-  async function worker() {
-    while (pool.length) {
-      const key = pool.pop();
-      try {
-        const resource = '/' + cloud.bucket + '/' + key;
-        const headers = { 'x-oss-date': date };
-        headers['Authorization'] = ossSign('HEAD', '', date, resource, {});
-        if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
-        const res = await fetch(ossBase() + '/' + key, { method: 'HEAD', headers });
-        if (res.ok) {
-          const cc = (res.headers.get('cache-control') || '').toLowerCase();
-          if (cc.indexOf('max-age=31536000') >= 0) ok++; else bad++;
-        } else fail++;
-      } catch (e) { fail++; }
-    }
+$('#photoCacheInfoBtn').addEventListener('click', async () => {
+  const st = $('#photoCacheInfo');
+  st.textContent = '正在统计…';
+  try {
+    const s = await idbStats();
+    st.textContent = s.n
+      ? '本地已缓存 ' + s.n + ' 张照片，约 ' + (s.bytes / 1048576).toFixed(1) + ' MB。打开瞬间时优先用本地，不再重复下载'
+      : '本地还没有缓存（首次浏览瞬间时会把看过的照片存到本设备，之后离线也能看）';
+  } catch (e) {
+    st.textContent = '本地缓存不可用（当前浏览器不支持 IndexedDB），照片直接从云端加载';
   }
-  await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
-  st.textContent = '检查完成：已有一年缓存 ' + ok + ' 张' + (bad ? '，缺缓存头 ' + bad + ' 张（点「优化旧照片缓存」补上）' : '') + (fail ? '，检查失败 ' + fail + ' 张（可能是 CORS 未允许 HEAD，改用控制台抽查）' : '');
+});
+/* ===== 照片本地缓存（IndexedDB）：优先用本地、没有的再从云端下载，避免重复流量 ===== */
+const IDB_PHOTO_NAME = 'love-nest-photo-cache';
+const IDB_PHOTO_STORE = 'photos';
+let _idb = null;
+const _blobUrls = {};
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    if (_idb) return resolve(_idb);
+    let req;
+    try { req = indexedDB.open(IDB_PHOTO_NAME, 1); } catch (e) { return reject(e); }
+    req.onupgradeneeded = () => { try { req.result.createObjectStore(IDB_PHOTO_STORE); } catch (e) {} };
+    req.onsuccess = () => { _idb = req.result; resolve(_idb); };
+    req.onerror = () => reject(req.error);
+  });
 }
-$('#cacheCheckBtn').addEventListener('click', ossCheckCache);
+function idbGet(key) { return idbOpen().then(db => new Promise((res, rej) => { try { const rq = db.transaction(IDB_PHOTO_STORE, 'readonly').objectStore(IDB_PHOTO_STORE).get(key); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => rej(rq.error); } catch (e) { rej(e); } })); }
+function idbPut(key, blob) { return idbOpen().then(db => new Promise((res, rej) => { try { const rq = db.transaction(IDB_PHOTO_STORE, 'readwrite').objectStore(IDB_PHOTO_STORE).put(blob, key); rq.onsuccess = () => res(); rq.onerror = () => rej(rq.error); } catch (e) { rej(e); } })); }
+function idbDel(key) { return idbOpen().then(db => new Promise((res, rej) => { try { const rq = db.transaction(IDB_PHOTO_STORE, 'readwrite').objectStore(IDB_PHOTO_STORE).delete(key); rq.onsuccess = () => res(); rq.onerror = () => rej(rq.error); } catch (e) { rej(e); } })); }
+function idbClear() { return idbOpen().then(db => new Promise((res, rej) => { try { const rq = db.transaction(IDB_PHOTO_STORE, 'readwrite').objectStore(IDB_PHOTO_STORE).clear(); rq.onsuccess = () => res(); rq.onerror = () => rej(rq.error); } catch (e) { rej(e); } })); }
+function idbStats() {
+  return idbOpen().then(db => new Promise((res, rej) => {
+    let n = 0, bytes = 0;
+    try {
+      const rq = db.transaction(IDB_PHOTO_STORE, 'readonly').objectStore(IDB_PHOTO_STORE).openCursor();
+      rq.onsuccess = () => { const c = rq.result; if (c) { n++; bytes += (c.value && c.value.size) || 0; c.continue(); } else res({ n, bytes }); };
+      rq.onerror = () => rej(rq.error);
+    } catch (e) { rej(e); }
+  }));
+}
+function photoKeyOf(u) {
+  if (!u || u.indexOf('data:') === 0) return '';
+  const base = ossBase() + '/';
+  return u.indexOf(base) === 0 ? u.slice(base.length) : '';
+}
+function blobUrlOf(key, blob) {
+  if (!_blobUrls[key]) _blobUrls[key] = URL.createObjectURL(blob);
+  return _blobUrls[key];
+}
+async function loadPhoto(img) {
+  const key = img.dataset.photo, url = img.dataset.src;
+  if (!key || !url) { const ph = img.closest('.moment-photo'); if (ph) ph.style.display = 'none'; return; }
+  try {
+    const blob = await idbGet(key);
+    if (blob) { img.src = blobUrlOf(key, blob); return; }
+  } catch (e) {}
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    try { await idbPut(key, blob); } catch (e) {}
+    img.src = blobUrlOf(key, blob);
+  } catch (e) {
+    const ph = img.closest('.moment-photo'); if (ph) ph.style.display = 'none';
+  }
+}
+const _photoIO = ('IntersectionObserver' in window) ? new IntersectionObserver(entries => {
+  entries.forEach(en => { if (en.isIntersecting) { _photoIO.unobserve(en.target); loadPhoto(en.target); } });
+}, { rootMargin: '400px' }) : null;
+function observePhotos() {
+  document.querySelectorAll('#momentBox img[data-photo]:not([data-loading])').forEach(img => {
+    img.dataset.loading = '1';
+    if (_photoIO) _photoIO.observe(img); else loadPhoto(img);
+  });
+}
+function dropPhotoCache(key) {
+  if (key && _blobUrls[key]) { try { URL.revokeObjectURL(_blobUrls[key]); } catch (e) {} delete _blobUrls[key]; }
+  if (key) idbDel(key).catch(() => {});
+}
 /* 给一张旧照片补上一年缓存头（原地复制 + 替换元数据，不重传数据、不压缩画质） */
 const PHOTO_MIME = { gif: 'image/gif', png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg', bmp: 'image/bmp', avif: 'image/avif' };
 async function ossFixOnePhoto(key) {
@@ -1325,46 +1371,6 @@ $('#saveSettings').addEventListener('click', () => {
 $('#cEnabled').addEventListener('change', () => { cloud.enabled = $('#cEnabled').checked; saveCloud(); refreshCloudStatus(); });
 $('#cloudUploadBtn').addEventListener('click', () => { readCloudFields(); cloudUpload(true); });
 $('#cloudDownloadBtn').addEventListener('click', () => { readCloudFields(); cloudDownload(true); });
-$('#cloudFixCacheBtn').addEventListener('click', async () => {
-  readCloudFields();
-  if (!cloudOk()) { showToast('请先开启云端同步并填写 AccessKey'); return; }
-  const btn = $('#cloudFixCacheBtn'), st = $('#cacheFixStatus');
-  btn.disabled = true; st.textContent = '正在优化…（照片多时稍等）';
-  try {
-    const keys = momentPhotoKeys();
-    if (!keys.length) { st.textContent = '当前没有照片需要优化（先上传瞬间照片再试）'; return; }
-    for (const k of keys) await ossFixOnePhoto(k);
-    st.textContent = '完成：已为 ' + keys.length + ' 张照片设置一年缓存（不重传、不压缩画质）';
-    showToast('照片缓存优化完成：' + keys.length + ' 张');
-  } catch (e) {
-    st.textContent = '优化失败：' + e.message;
-  }
-  btn.disabled = false;
-});
-$('#cloudCleanBtn').addEventListener('click', async () => {
-  readCloudFields();
-  if (!cloudOk()) { showToast('请先开启云端同步并填写 AccessKey'); return; }
-  const btn = $('#cloudCleanBtn'), st = $('#cleanStatus');
-  btn.disabled = true; st.textContent = '正在扫描云端照片…（需 RAM 策略含 oss:ListObjects）';
-  try {
-    const all = await ossListPhotos();
-    const ref = new Set(momentPhotoKeys());
-    const orphans = all.filter(k => !ref.has(k));
-    if (!orphans.length) { st.textContent = '云端干净：云端共 ' + all.length + ' 张，页面引用 ' + ref.size + ' 张，无孤儿照片'; return; }
-    if (!confirm('发现 ' + orphans.length + ' 张页面未引用的孤儿照片（云端累计占用），确定删除吗？删除后无法恢复。')) {
-      st.textContent = '已取消，未删除任何照片'; return;
-    }
-    let ok = 0;
-    for (const k of orphans) {
-      try { await ossDeleteObject(k); ok++; } catch (e) {}
-    }
-    st.textContent = '完成：已删除 ' + ok + ' 张孤儿照片' + (ok < orphans.length ? '，' + (orphans.length - ok) + ' 张删除失败（检查 CORS 是否含 DELETE）' : '');
-    showToast('孤儿照片清理完成：' + ok + ' 张');
-  } catch (e) {
-    st.textContent = '清理失败：' + e.message;
-  }
-  btn.disabled = false;
-});
 $('#clearRecords').addEventListener('click', () => {
   if (!confirm('确定清空所有学习记录吗？此操作不可恢复。')) return;
   data.records = {}; persist(data); render();
@@ -1567,8 +1573,8 @@ function renderMomentCard(m) {
   const name = esc(m.who === 'A' ? data.couple.nameA : data.couple.nameB);
   const photos = (m.photos || []).map((u, i) => {
     const src = signPhotoUrl(u);
-    return '<div class="moment-photo"><img src="' + src + '" alt="瞬间照片 ' + (i + 1) + '" loading="lazy" onerror="this.closest(\'.moment-photo\').style.display=\'none\'">' +
-    '<a class="save" href="' + src + '" target="_blank" rel="noopener" aria-label="打开大图保存" title="打开大图保存"><svg class="i" style="width:16px;height:16px"><use href="#i-download" xlink:href="#i-download"/></svg></a></div>';
+    return '<div class="moment-photo"><img data-photo="' + esc(photoKeyOf(u)) + '" data-src="' + esc(src) + '" alt="瞬间照片 ' + (i + 1) + '" loading="lazy" onerror="this.closest(\'.moment-photo\').style.display=\'none\'">' +
+    '<a class="save" href="' + esc(src) + '" target="_blank" rel="noopener" aria-label="打开大图保存" title="打开大图保存"><svg class="i" style="width:16px;height:16px"><use href="#i-download" xlink:href="#i-download"/></svg></a></div>';
   }).join('');
   return '<div class="moment-card' + (he ? ' he' : '') + '">' +
     '<div class="head">' + mascotImg(m.who) +
@@ -1584,6 +1590,7 @@ function renderMoments() {
     return;
   }
   $('#momentBox').innerHTML = list.map(renderMomentCard).join('');
+  observePhotos();
 }
 
 /* ============ 瞬间：照片处理与发布（原图上传，不压缩） ============ */
@@ -1673,6 +1680,7 @@ $('#saveMoment').addEventListener('click', async () => {
         : await Promise.all(momentFiles.map(f => blobToDataUrl(f.file)));
     }
     data.moments = data.moments || [];
+    photos.forEach(u => dropPhotoCache(photoKeyOf(u)));
     data.moments.push({ id, date: todayStr(), who: momentWho, content, time: hh + ':' + mm, photos });
     persist(data); closeMask('momentMask'); render();
     showToast(photos.length ? '瞬间发布成功，照片已存到云端' : '瞬间发布成功');
@@ -1689,7 +1697,7 @@ $('#momentBox').addEventListener('click', e => {
   if (m && m.photos && cloudOk()) {
     const base = ossBase() + '/';
     m.photos.filter(u => u.indexOf(base) === 0).map(u => u.slice(base.length))
-      .forEach(k => ossDeleteObject(k).catch(() => {}));
+      .forEach(k => { ossDeleteObject(k).catch(() => {}); dropPhotoCache(k); });
   }
   data.moments = (data.moments || []).filter(x => x.id !== b.dataset.mdel2);
   persist(data); render();
