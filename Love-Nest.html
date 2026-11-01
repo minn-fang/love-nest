@@ -558,6 +558,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <div class="hint-txt" id="keyStatus">AccessKey 未配置</div>
       <button class="btn btn-ghost" id="cloudFixCacheBtn" style="margin-top:4px">优化旧照片缓存（一年）</button>
       <div class="hint-txt" id="cacheFixStatus"></div>
+      <button class="btn btn-ghost" id="cacheCheckBtn" style="margin-top:4px">检查照片缓存头</button>
+      <div class="hint-txt" id="cacheCheckStatus"></div>
       <button class="btn btn-ghost" id="cloudCleanBtn" style="margin-top:4px">清理云端孤儿照片</button>
       <div class="hint-txt" id="cleanStatus"></div>
       <div class="hint-txt" id="buildInfo" style="color:#b0a0c8"></div>
@@ -847,7 +849,8 @@ function updateBuildInfo() {
   let warn = '';
   if (ak.indexOf('TMP.') === 0) warn = ' ！当前填的是临时凭证（TMP 开头）：会过期、照片可能加载失败，请换成 RAM 长期 AccessKey（LTAI 开头）';
   else if (!ak) warn = ' 未填写 AccessKey';
-  el.textContent = '内核 ' + BUILD + ' · 照片签名固定至 ' + new Date(PHOTO_SIGN_EXPIRES * 1000).toISOString().slice(0, 10) + (fixed ? '（缓存正常）' : '（异常！）') + warn;
+  const akHead = ak.length > 6 ? ak.slice(0, 6) + '***' : '';
+  el.textContent = '内核 ' + BUILD + ' · 签名固定至 ' + new Date(PHOTO_SIGN_EXPIRES * 1000).toISOString().slice(0, 10) + (fixed ? '（缓存正常）' : '（异常！）') + ' · AK ' + (akHead || '未填') + warn;
 }
 function signPhotoUrl(u) {
   if (!cloudOk() || u.indexOf('?') >= 0 || u.indexOf('data:') === 0) return u;
@@ -921,6 +924,36 @@ async function ossListPhotos() {
   }
   return keys;
 }
+/* 检查照片缓存头：HEAD 逐个照片，统计有多少张已有一年缓存（判断是不是“缺头导致反复全量下载”） */
+async function ossCheckCache() {
+  const st = $('#cacheCheckStatus');
+  if (!st) return;
+  st.textContent = '正在检查照片缓存头…';
+  const keys = momentPhotoKeys();
+  if (!keys.length) { st.textContent = '没有可检查的照片'; return; }
+  let ok = 0, bad = 0, fail = 0;
+  const date = new Date().toUTCString();
+  const pool = keys.slice();
+  async function worker() {
+    while (pool.length) {
+      const key = pool.pop();
+      try {
+        const resource = '/' + cloud.bucket + '/' + key;
+        const headers = { 'x-oss-date': date };
+        headers['Authorization'] = ossSign('HEAD', '', date, resource, {});
+        if (cloudToken()) headers['x-oss-security-token'] = cloudToken();
+        const res = await fetch(ossBase() + '/' + key, { method: 'HEAD', headers });
+        if (res.ok) {
+          const cc = (res.headers.get('cache-control') || '').toLowerCase();
+          if (cc.indexOf('max-age=31536000') >= 0) ok++; else bad++;
+        } else fail++;
+      } catch (e) { fail++; }
+    }
+  }
+  await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
+  st.textContent = '检查完成：已有一年缓存 ' + ok + ' 张' + (bad ? '，缺缓存头 ' + bad + ' 张（点「优化旧照片缓存」补上）' : '') + (fail ? '，检查失败 ' + fail + ' 张（可能是 CORS 未允许 HEAD，改用控制台抽查）' : '');
+}
+$('#cacheCheckBtn').addEventListener('click', ossCheckCache);
 /* 给一张旧照片补上一年缓存头（原地复制 + 替换元数据，不重传数据、不压缩画质） */
 const PHOTO_MIME = { gif: 'image/gif', png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', jpeg: 'image/jpeg', bmp: 'image/bmp', avif: 'image/avif' };
 async function ossFixOnePhoto(key) {
