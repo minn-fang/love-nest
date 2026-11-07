@@ -911,7 +911,7 @@ async function ossDeleteObject(key) {
 /* 为照片生成长期有效的签名访问链接：Bucket 设为私有后照片也能正常显示/下载。
  * 过期时间用固定常量，保证同一张照片的签名 URL 恒定不变，浏览器才能按 URL 缓存（否则每次都重新下载）。 */
 const PHOTO_SIGN_EXPIRES = Math.floor(Date.UTC(2036, 0, 1, 0, 0, 0) / 1000);
-const BUILD = 'v26-20261107';
+const BUILD = 'v29-20261107';
 /* 设置面板自检：显示内核版本、签名是否固定、是否填了临时凭证（一眼判断线上是不是最新版） */
 function updateBuildInfo() {
   const el = $('#buildInfo'); if (!el) return;
@@ -1857,12 +1857,12 @@ function fxPrepare() {
 }
 function fireworkAt(x, y, hue) {
   const sc = Math.min(1, Math.min(innerWidth, innerHeight) / 820);   // 小屏自动收小花径，避免糊满屏
-  _fxParts.push({ x, y, vx: 0, vy: 0, life: 1, hue, flash: true });   // 爆开瞬间的中心闪光
-  const cnt = 108;
+  _fxParts.push({ x, y, vx: 0, vy: 0, life: 1, hue, r: 9 * (.72 + sc * .28), flash: true });  // 中心一点亮芯，不是大白球
+  const cnt = 70;
   for (let i = 0; i < cnt; i++) {
-    const a = (Math.PI * 2 * i) / cnt + Math.random() * .08;
-    const sp = (.35 + Math.pow(Math.random(), .72) * 4.0) * sc;           // 低速粒子更多，撑住花心不成空心环
-    _fxParts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, hue: hue + Math.random() * 34 - 17, r: (2.2 + Math.random() * 1.7) * (.82 + sc * .18) });
+    const a = Math.random() * Math.PI * 2;                                 // 角度随机，避免排成一圈整齐的环
+    const sp = (Math.random() < .3 ? Math.random() * 1.1 : 1.7 + Math.random() * 2.6) * sc;   // 三成慢速粒子填住花心，不成空心环
+    _fxParts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, hue: hue + Math.random() * 8 - 4, r: (2.0 + Math.random() * 1.6) * (.82 + sc * .18) });
   }
   if (!_fxRAF) _fxRAF = requestAnimationFrame(fxLoop);
 }
@@ -1874,28 +1874,38 @@ function fxLoop() {
   const W = innerWidth, H = innerHeight;
   for (let i = _fxParts.length - 1; i >= 0; i--) {
     const p = _fxParts[i];
-    if (p.flash) {                                              // 中心闪光：缓慢收缩变淡
-      p.life -= .016;
+    if (p.flash) {                                              // 中心亮芯：一闪就收
+      p.life -= .045;
       if (p.life <= 0) { _fxParts.splice(i, 1); continue; }
-      ctx.globalAlpha = p.life * p.life * .58;
-      ctx.fillStyle = 'hsl(' + p.hue + ',100%,72%)';
-      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * p.life + 12, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = p.life * p.life * .62;
+      ctx.fillStyle = 'hsl(' + p.hue + ',100%,86%)';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * p.life + 3, 0, Math.PI * 2); ctx.fill();
       continue;
     }
     p.x += p.vx; p.y += p.vy;
-    p.vx *= .986; p.vy = p.vy * .986 + .008;                    // 阻力更大、重力很轻：慢慢飘开、几乎不下坠
-    p.life -= .0055;                                            // 单颗约 3 秒才散尽
+    p.vx *= .970; p.vy = p.vy * .970 + .030;                    // 快速收住不散太远，之后慢慢往下飘落
+    p.life -= .0048;                                            // 单颗约 3.5 秒才散尽，在空中停得久
     if (p.life <= 0) { _fxParts.splice(i, 1); continue; }
     if (p.x < -90 || p.x > W + 90 || p.y < -90 || p.y > H + 90) { _fxParts.splice(i, 1); continue; }
     const a = Math.max(0, p.life);
-    ctx.fillStyle = 'hsl(' + p.hue + ',96%,64%)';
-    ctx.globalAlpha = a * .26;                                  // 外层柔光：放大让点连成雾
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * a * 4.6 + 6, 0, Math.PI * 2); ctx.fill();
-    ctx.globalAlpha = a * .50;
-    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * a * 1.7 + 1.8, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#FFFFFF';                                  // 白核：让每点像星
-    ctx.globalAlpha = a * .88;
-    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1.1, p.r * a * .55), 0, Math.PI * 2); ctx.fill();
+    const v = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    if (v > 1.1) {                                              // 拖尾：微信烟花那种一条条余迹
+      ctx.globalAlpha = a * .55;
+      ctx.strokeStyle = 'hsl(' + p.hue + ',100%,64%)';
+      ctx.lineWidth = Math.max(1, p.r * a * .9);
+      ctx.beginPath();
+      ctx.moveTo(p.x - p.vx * 2.4, p.y - p.vy * 2.4);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'hsl(' + p.hue + ',100%,62%)';
+    ctx.globalAlpha = a * .22;                                  // 很轻的柔光，不叠成白团
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * a * 2.0 + 1.6, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = a * .55;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * a * 1.05 + .8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'hsl(' + p.hue + ',100%,88%)';              // 亮核：点状，不发散
+    ctx.globalAlpha = a * .82;
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(.9, p.r * a * .45), 0, Math.PI * 2); ctx.fill();
   }
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
@@ -1904,18 +1914,33 @@ function fxLoop() {
 }
 function fireworksShow(n) {
   if (reduceMotion() || !fxPrepare()) return;
-  if (innerWidth < 520) n = Math.min(n, 4);                     // 手机窄屏少放两朵，别糊成一团
-  const hues = [340, 42, 285, 196, 152, 216, 18];
+  if (innerWidth < 520) n = 9;                                  // 手机窄屏减到 9 朵，别把屏挤满
+  const hues = [340, 42, 285, 196, 152, 216, 18, 128, 268];
   const off = Math.floor(Math.random() * hues.length);          // 每次换一组配色，不总是同样的颜色
-  const pos = [[0, .06], [1, .18], [.34, .62], [.72, .34], [.14, .46], [.86, .66], [.5, 0], [.22, .78]];
+  // 位置按索引左右交替、上下错开：同批一起炸的几朵也落在不同角落，不会叠在一起
+  const pos = [[.04, .04], [.96, .12], [.50, .00], [.18, .30], [.84, .24], [.52, .36], [.06, .52], [.94, .48], [.46, .60], [.20, .72], [.80, .78], [.54, .86], [.08, .88], [.92, .66], [.44, .20]];
   const flip = Math.random() < .5 ? 1 : -1;                      // 随机左右镜像，排布每次不一样
-  for (let i = 0; i < n; i++) {
-    setTimeout(() => {
-      const p = pos[i % pos.length];
-      const fx = .22 + (flip > 0 ? p[0] : 1 - p[0]) * .56;        // 散开排布，避免几朵扎堆重叠
-      fireworkAt(innerWidth * (fx + (Math.random() - .5) * .05), innerHeight * (.30 + p[1] * .25 + (Math.random() - .5) * .04), hues[(i + off) % hues.length]);
-    }, i * 560);
-  }
+  const boomAt = (i) => {
+    const p = pos[i % pos.length];
+    const fx = .20 + (flip > 0 ? p[0] : 1 - p[0]) * .60;
+    fireworkAt(innerWidth * (fx + (Math.random() - .5) * .05), innerHeight * (.22 + p[1] * .42 + (Math.random() - .5) * .04), hues[(i + off) % hues.length]);
+  };
+  // 分成几批放：每批 1~3 朵，批与批之间固定节奏铺开，整场约 8 秒
+  const nb = innerWidth < 520 ? 5 : 7;
+  const base = Math.floor(n / nb), extra = n % nb;
+  const groups = [];
+  for (let g = 0; g < nb; g++) groups.push(base + (g < extra ? 1 : 0));
+  groups.sort(() => Math.random() - .5);                        // 打乱节奏，每次不一样
+  const SPAN = 4200;                                            // 第一朵到最后一朵的总跨度（毫秒）
+  let idx = 0;
+  groups.forEach((size, g) => {
+    const t0 = (g / (nb - 1)) * SPAN;
+    for (let k = 0; k < size; k++) {
+      const at = idx + k;
+      setTimeout(() => boomAt(at), t0 + k * 90);                // 同批错开 90ms，看着是同时绽放
+    }
+    idx += size;
+  });
 }
 
 function openAnniv(auto) {
@@ -1942,8 +1967,7 @@ function annivClearFx() {
 function closeAnniv() { annivHide(); annivClearFx(); }
 /* 放烟花：先让弹窗退场，烟花画在独立的全屏层上，不会被卡片挡住 */
 function annivBoom() {
-  const info = annivInfo();
-  const n = (info && info.annual) ? 6 : 3;
+  const n = 15;                                                 // 月纪念与周年都是 15 朵
   annivHide();
   annivClearFx();
   setTimeout(() => fireworksShow(n), 140);
