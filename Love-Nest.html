@@ -310,6 +310,57 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 @media(min-width:760px){
   .stats{grid-template-columns:repeat(3,1fr)}
 }
+
+/* ============ 纪念日（每月纪念日 / 周年） ============ */
+/* 氛围层：半透明粉色爱心从底部上浮，只在纪念日当天启动，不拦截任何点击 */
+.anniv-bubbles{position:fixed;inset:0;z-index:41;pointer-events:none;overflow:hidden}
+.anniv-bubbles i{position:absolute;bottom:-48px;display:block;color:#FFA7C0;opacity:0;animation:bubUp linear infinite;will-change:transform,opacity}
+.anniv-bubbles svg{width:100%;height:100%;display:block;fill:currentColor;stroke:none}
+@keyframes bubUp{
+  0%{transform:translate3d(0,0,0) rotate(0deg) scale(.88);opacity:0}
+  12%{opacity:.66}
+  50%{transform:translate3d(var(--dx),-54vh,0) rotate(9deg) scale(1)}
+  88%{opacity:.44}
+  100%{transform:translate3d(calc(var(--dx) * -1),-114vh,0) rotate(-7deg) scale(1.05);opacity:0}
+}
+/* 纪念日入口（只在纪念日当天出现，可随时重温） */
+.anniv-tab{position:fixed;right:15px;bottom:18px;z-index:42;width:46px;height:46px;border-radius:50%;background:#fff;color:#FF7FA0;display:none;place-items:center;border:1.5px solid #FFE0EA;box-shadow:0 8px 20px rgba(255,139,167,.42);transition:.2s}
+.anniv-tab.on{display:grid}
+.anniv-tab:hover{transform:scale(1.08)}
+.anniv-tab svg{width:20px;height:20px}
+/* 弹窗 */
+.anniv-mask{position:fixed;inset:0;z-index:70;display:none;place-items:center;padding:18px;background:rgba(84,60,70,.44);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.anniv-mask.on{display:grid}
+.anniv-mask.annual{background:rgba(56,38,50,.6)}
+.anniv-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:71}
+.anniv-card{position:relative;z-index:2;width:min(400px,100%);max-height:88vh;overflow:auto;border-radius:26px;padding:24px 20px 20px;text-align:center;background:linear-gradient(180deg,#FFFDFC 0%,#FFF3F7 60%,#FFF8FA 100%);border:1.5px solid #FFE2EC;box-shadow:0 28px 70px rgba(105,50,72,.32);animation:annivPop .44s cubic-bezier(.18,1.18,.42,1) both}
+@keyframes annivPop{from{transform:scale(.84) translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.anniv-x{position:absolute;top:11px;right:11px;width:34px;height:34px;border-radius:11px;background:#FBEDF1;color:#B99AA4;display:grid;place-items:center;transition:.2s}
+.anniv-x:hover{color:var(--pink-deep)}
+.anniv-x svg{width:16px;height:16px}
+.anniv-kicker{font-size:12px;font-weight:700;letter-spacing:.1em;color:#D9899F}
+.anniv-title{font-family:var(--font-display);font-size:22px;margin-top:7px;color:#5C434B;line-height:1.35}
+.anniv-days{display:flex;align-items:baseline;justify-content:center;gap:6px;margin:16px 0 2px}
+.anniv-days b{font-family:var(--font-display);font-size:44px;line-height:1;color:#F26D92;font-weight:400}
+.anniv-days span{font-size:13px;color:#A98F98;font-weight:700}
+.anniv-duo{display:flex;align-items:center;justify-content:center;gap:9px;margin:15px 0 2px}
+.anniv-duo img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 4px 12px rgba(255,139,167,.3)}
+.anniv-duo i{display:block;width:19px;height:19px;color:#FF8BA7;animation:beat 1.2s ease-in-out infinite}
+.anniv-duo i svg{width:100%;height:100%;fill:currentColor;display:block}
+@keyframes beat{0%,100%{transform:scale(1)}38%{transform:scale(1.2)}62%{transform:scale(1.05)}}
+.anniv-line{font-size:14px;color:#6C565D;line-height:1.85;margin:12px 2px 0;min-height:3.7em}
+.anniv-since{font-size:11px;color:#B49AA2;margin-top:6px}
+.anniv-btns{display:flex;gap:10px;margin-top:18px}
+.anniv-btns button{flex:1;border-radius:15px;padding:12px 10px;font-weight:700;font-size:14px;transition:.2s}
+.anniv-primary{background:var(--pink);color:#fff;box-shadow:0 8px 18px rgba(255,139,167,.38)}
+.anniv-primary:hover{background:var(--pink-deep)}
+.anniv-ghost{background:#F8EDF1;color:#9A8189}
+.anniv-ghost:hover{background:#F2E0E6}
+@media(max-width:380px){
+  .anniv-card{padding:20px 16px 16px}
+  .anniv-days b{font-size:38px}
+  .anniv-title{font-size:20px}
+}
 </style>
 </head>
 <body>
@@ -577,6 +628,30 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 
 <div class="toast" id="toast" role="status"></div>
 
+<!-- ===== 纪念日氛围（只在纪念日当天启用，平时完全不出现） ===== -->
+<div class="anniv-bubbles" id="annivBubbles" aria-hidden="true"></div>
+<button class="anniv-tab" id="annivTab" aria-label="查看今天的纪念日" title="今天是我们的纪念日">
+  <svg class="i" style="width:20px;height:20px"><use href="#i-heart" xlink:href="#i-heart"/></svg>
+</button>
+<canvas class="anniv-fx" id="annivFx" aria-hidden="true"></canvas>
+<div class="anniv-mask" id="annivMask">
+  <div class="anniv-card">
+    <button class="anniv-x" id="annivX" aria-label="关闭纪念日弹窗">
+      <svg class="i" style="width:16px;height:16px"><use href="#i-close" xlink:href="#i-close"/></svg>
+    </button>
+    <div class="anniv-kicker" id="annivKicker"></div>
+    <div class="anniv-title" id="annivTitle"></div>
+    <div class="anniv-days"><b id="annivDays">0</b><span>天</span></div>
+    <div class="anniv-duo" id="annivDuo"></div>
+    <div class="anniv-line" id="annivLine"></div>
+    <div class="anniv-since" id="annivSince"></div>
+    <div class="anniv-btns">
+      <button class="anniv-ghost" id="annivFw">放一朵烟花</button>
+      <button class="anniv-primary" id="annivOk">收下这份心意</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== SVG 图标库 ===== -->
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
   <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21C7.2 16.9 2.8 13.1 2.8 9.1c0-3 2.3-5.1 5-5.1 1.8 0 3.5 1 4.2 2.7C12.7 5 14.4 4 16.2 4c2.7 0 5 2.1 5 5.1 0 4-4.4 7.8-9.2 11.9z" fill="currentColor" stroke="none"/></symbol>
@@ -836,7 +911,7 @@ async function ossDeleteObject(key) {
 /* 为照片生成长期有效的签名访问链接：Bucket 设为私有后照片也能正常显示/下载。
  * 过期时间用固定常量，保证同一张照片的签名 URL 恒定不变，浏览器才能按 URL 缓存（否则每次都重新下载）。 */
 const PHOTO_SIGN_EXPIRES = Math.floor(Date.UTC(2036, 0, 1, 0, 0, 0) / 1000);
-const BUILD = 'v22-20261029';
+const BUILD = 'v26-20261107';
 /* 设置面板自检：显示内核版本、签名是否固定、是否填了临时凭证（一眼判断线上是不是最新版） */
 function updateBuildInfo() {
   const el = $('#buildInfo'); if (!el) return;
@@ -1703,6 +1778,202 @@ $('#momentBox').addEventListener('click', e => {
   persist(data); render();
 });
 
+/* ============ 纪念日（每月纪念日温柔款 / 周年隆重款） ============ */
+/* 触发日 = 「在一起的日子」里的「日」，例如 2026-10-07 → 每月 7 号；同月同日且满一年 → 周年。
+   只在当天出现：每次打开页面都自动弹窗提醒，右下角留一个小爱心入口可随时重温。
+   非纪念日不创建任何元素、不跑任何动画，也不写云端数据。 */
+const ANNIV_MONTH_LINES = [
+  '这个月的小窝又多了好多回忆，下个月继续一起攒',
+  '不用特别做什么，今天只想认真夸你一句',
+  '异地再远，今天也要隔空抱一下',
+  '又一个月，我们把普通的日子过成了想留住的那些',
+  '又到这天了，翻开日历第一件事就是想起你'
+];
+const ANNIV_YEAR_LINES = [
+  '从这天开始，往后的每一天都算加分项',
+  '异地再远，纪念日也要一起过——这是我们说好的',
+  '愿我们的小窝永远亮着灯，推门就有热汤和晚安',
+  '又把喜欢过成了习惯，把习惯过成了想要的样子'
+];
+const reduceMotion = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } };
+
+function annivInfo() {
+  const startStr = (data.couple && data.couple.startDate) || '2026-10-07';
+  const start = parse(startStr);
+  const now = new Date();
+  const days = dayDiff(todayStr(), startStr);
+  if (!(days > 0)) return null;                              // 在一起当天不算纪念日
+  if (now.getDate() !== start.getDate()) return null;         // 不是每个月的那个日子
+  const years = now.getFullYear() - start.getFullYear();
+  const months = years * 12 + (now.getMonth() - start.getMonth());
+  if (months < 1) return null;
+  const annual = now.getMonth() === start.getMonth();
+  return { days, months, years, annual, startStr, key: todayStr() };
+}
+
+function startAnnivBubbles() {
+  const box = $('#annivBubbles');
+  if (!box || box.childElementCount || reduceMotion()) return;
+  for (let i = 0; i < 9; i++) {
+    const el = document.createElement('i');
+    const size = 14 + Math.random() * 16;
+    el.style.left = (Math.random() * 90 + 3) + '%';
+    el.style.width = size.toFixed(0) + 'px';
+    el.style.height = size.toFixed(0) + 'px';
+    el.style.setProperty('--dx', (Math.random() * 56 - 28).toFixed(0) + 'px');
+    el.style.animationDuration = (12 + Math.random() * 9).toFixed(1) + 's';
+    el.style.animationDelay = (-Math.random() * 20).toFixed(1) + 's';
+    el.innerHTML = '<svg viewBox="0 0 24 24"><use href="#i-heart" xlink:href="#i-heart"/></svg>';
+    box.appendChild(el);
+  }
+}
+function stopAnnivBubbles() {
+  const box = $('#annivBubbles');
+  if (box) box.innerHTML = '';
+}
+function annivCountUp(el, to) {
+  if (!el) return;
+  if (reduceMotion()) { el.textContent = to; return; }
+  const dur = 1100, t0 = performance.now();
+  const step = t => {
+    const p = Math.min(1, (t - t0) / dur);
+    el.textContent = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  el.textContent = '0';
+  requestAnimationFrame(step);
+}
+
+/* 烟花：只画在弹窗那一层，粒子自然消散后自动停，不留常驻动画 */
+let _fxRAF = 0, _fxParts = [], _fxCtx = null;
+function fxPrepare() {
+  const cv = $('#annivFx'); if (!cv) return null;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.floor(innerWidth * dpr);
+  cv.height = Math.floor(innerHeight * dpr);
+  _fxCtx = cv.getContext('2d');
+  _fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return _fxCtx;
+}
+function fireworkAt(x, y, hue) {
+  const sc = Math.min(1, Math.min(innerWidth, innerHeight) / 820);   // 小屏自动收小花径，避免糊满屏
+  _fxParts.push({ x, y, vx: 0, vy: 0, life: 1, hue, flash: true });   // 爆开瞬间的中心闪光
+  const cnt = 108;
+  for (let i = 0; i < cnt; i++) {
+    const a = (Math.PI * 2 * i) / cnt + Math.random() * .08;
+    const sp = (.35 + Math.pow(Math.random(), .72) * 4.0) * sc;           // 低速粒子更多，撑住花心不成空心环
+    _fxParts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, hue: hue + Math.random() * 34 - 17, r: (2.2 + Math.random() * 1.7) * (.82 + sc * .18) });
+  }
+  if (!_fxRAF) _fxRAF = requestAnimationFrame(fxLoop);
+}
+function fxLoop() {
+  _fxRAF = 0;
+  const ctx = _fxCtx; if (!ctx) return;
+  ctx.clearRect(0, 0, innerWidth, innerHeight);
+  ctx.globalCompositeOperation = 'lighter';
+  const W = innerWidth, H = innerHeight;
+  for (let i = _fxParts.length - 1; i >= 0; i--) {
+    const p = _fxParts[i];
+    if (p.flash) {                                              // 中心闪光：缓慢收缩变淡
+      p.life -= .016;
+      if (p.life <= 0) { _fxParts.splice(i, 1); continue; }
+      ctx.globalAlpha = p.life * p.life * .58;
+      ctx.fillStyle = 'hsl(' + p.hue + ',100%,72%)';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r * p.life + 12, 0, Math.PI * 2); ctx.fill();
+      continue;
+    }
+    p.x += p.vx; p.y += p.vy;
+    p.vx *= .986; p.vy = p.vy * .986 + .008;                    // 阻力更大、重力很轻：慢慢飘开、几乎不下坠
+    p.life -= .0055;                                            // 单颗约 3 秒才散尽
+    if (p.life <= 0) { _fxParts.splice(i, 1); continue; }
+    if (p.x < -90 || p.x > W + 90 || p.y < -90 || p.y > H + 90) { _fxParts.splice(i, 1); continue; }
+    const a = Math.max(0, p.life);
+    ctx.fillStyle = 'hsl(' + p.hue + ',96%,64%)';
+    ctx.globalAlpha = a * .26;                                  // 外层柔光：放大让点连成雾
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * a * 4.6 + 6, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = a * .50;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r * a * 1.7 + 1.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FFFFFF';                                  // 白核：让每点像星
+    ctx.globalAlpha = a * .88;
+    ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1.1, p.r * a * .55), 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  if (_fxParts.length) { if (!_fxRAF) _fxRAF = requestAnimationFrame(fxLoop); }
+  else ctx.clearRect(0, 0, innerWidth, innerHeight);
+}
+function fireworksShow(n) {
+  if (reduceMotion() || !fxPrepare()) return;
+  if (innerWidth < 520) n = Math.min(n, 4);                     // 手机窄屏少放两朵，别糊成一团
+  const hues = [340, 42, 285, 196, 152, 216, 18];
+  const off = Math.floor(Math.random() * hues.length);          // 每次换一组配色，不总是同样的颜色
+  const pos = [[0, .06], [1, .18], [.34, .62], [.72, .34], [.14, .46], [.86, .66], [.5, 0], [.22, .78]];
+  const flip = Math.random() < .5 ? 1 : -1;                      // 随机左右镜像，排布每次不一样
+  for (let i = 0; i < n; i++) {
+    setTimeout(() => {
+      const p = pos[i % pos.length];
+      const fx = .22 + (flip > 0 ? p[0] : 1 - p[0]) * .56;        // 散开排布，避免几朵扎堆重叠
+      fireworkAt(innerWidth * (fx + (Math.random() - .5) * .05), innerHeight * (.30 + p[1] * .25 + (Math.random() - .5) * .04), hues[(i + off) % hues.length]);
+    }, i * 560);
+  }
+}
+
+function openAnniv(auto) {
+  const info = annivInfo(); if (!info) return;
+  const idx = a => Math.floor(Math.random() * a.length);
+  $('#annivMask').classList.toggle('annual', info.annual);
+  $('#annivKicker').textContent = info.annual ? '周年纪念 · 一年里最重要的一天' : '月纪念 · 每月 ' + parse(info.startStr).getDate() + ' 号';
+  $('#annivTitle').textContent = info.annual ? '我们的第 ' + info.years + ' 周年' : '在一起的第 ' + info.months + ' 个月';
+  $('#annivLine').textContent = info.annual ? ANNIV_YEAR_LINES[idx(ANNIV_YEAR_LINES)] : ANNIV_MONTH_LINES[idx(ANNIV_MONTH_LINES)];
+  $('#annivSince').textContent = '自 ' + dateLabel(info.startStr) + ' 起';
+  $('#annivFw').textContent = info.annual ? '一起看烟花' : '放一朵烟花';
+  $('#annivOk').textContent = info.annual ? '继续我们的小窝' : '收下这份心意';
+  $('#annivDuo').innerHTML = mascotImg('A') + '<i><svg viewBox="0 0 24 24"><use href="#i-heart" xlink:href="#i-heart"/></svg></i>' + mascotImg('B');
+  $('#annivMask').classList.add('on');
+  annivCountUp($('#annivDays'), info.days);
+}
+function annivHide() {
+  const m = $('#annivMask'); if (m) m.classList.remove('on');
+}
+function annivClearFx() {
+  _fxParts = [];
+  if (_fxCtx) _fxCtx.clearRect(0, 0, innerWidth, innerHeight);
+}
+function closeAnniv() { annivHide(); annivClearFx(); }
+/* 放烟花：先让弹窗退场，烟花画在独立的全屏层上，不会被卡片挡住 */
+function annivBoom() {
+  const info = annivInfo();
+  const n = (info && info.annual) ? 6 : 3;
+  annivHide();
+  annivClearFx();
+  setTimeout(() => fireworksShow(n), 140);
+}
+function annivSync() {
+  const info = annivInfo();
+  const tab = $('#annivTab');
+  if (!info) {
+    if (tab) tab.classList.remove('on');
+    stopAnnivBubbles();
+    annivClearFx();
+    return;
+  }
+  if (tab) tab.classList.add('on');
+  startAnnivBubbles();
+  openAnniv(true);                       // 纪念日当天：每次打开页面都弹
+}
+
+$('#annivX').addEventListener('click', closeAnniv);
+$('#annivOk').addEventListener('click', closeAnniv);
+$('#annivFw').addEventListener('click', annivBoom);
+$('#annivTab').addEventListener('click', () => openAnniv(false));
+$('#annivMask').addEventListener('click', e => { if (e.target.id === 'annivMask') closeAnniv(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#annivMask').classList.contains('on')) closeAnniv(); });
+/* 页面长期挂着时跨到纪念日也能触发；离开纪念日则收起氛围层 */
+let _annivDay = todayStr();
+setInterval(() => {
+  if (todayStr() !== _annivDay) { _annivDay = todayStr(); annivSync(); }
+}, 60000);
+
 /* ============ 视图切换 & 初始化 ============ */
 window.addEventListener('hashchange', () => {
   const v = location.hash.replace('#', '');
@@ -1712,6 +1983,7 @@ switchView(VIEWS.includes(location.hash.replace('#', '')) ? location.hash.replac
 render();
 refreshCloudStatus();
 if (cloudOk()) cloudDownload(false);
+annivSync();
 
 
 </script>
