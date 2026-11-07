@@ -911,7 +911,7 @@ async function ossDeleteObject(key) {
 /* 为照片生成长期有效的签名访问链接：Bucket 设为私有后照片也能正常显示/下载。
  * 过期时间用固定常量，保证同一张照片的签名 URL 恒定不变，浏览器才能按 URL 缓存（否则每次都重新下载）。 */
 const PHOTO_SIGN_EXPIRES = Math.floor(Date.UTC(2036, 0, 1, 0, 0, 0) / 1000);
-const BUILD = 'v29-20261107';
+const BUILD = 'v31-20261107';
 /* 设置面板自检：显示内核版本、签名是否固定、是否填了临时凭证（一眼判断线上是不是最新版） */
 function updateBuildInfo() {
   const el = $('#buildInfo'); if (!el) return;
@@ -1846,6 +1846,72 @@ function annivCountUp(el, to) {
 
 /* 烟花：只画在弹窗那一层，粒子自然消散后自动停，不留常驻动画 */
 let _fxRAF = 0, _fxParts = [], _fxCtx = null;
+
+/* ===== 烟花音效：现场合成，不依赖音频文件 ===== */
+let _ac = null, _noise = null;
+function audioCtx() {
+  try {
+    if (!_ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      _ac = new AC();
+    }
+    if (_ac.state === 'suspended') _ac.resume();
+    return _ac;
+  } catch (e) { return null; }
+}
+function noiseBuf(ac) {
+  if (_noise) return _noise;
+  const n = Math.floor(ac.sampleRate * .5);                     // 一段快速衰减的白噪声，爆炸声复用
+  const b = ac.createBuffer(1, n, ac.sampleRate);
+  const d = b.getChannelData(0);
+  for (let i = 0; i < n; i++) { const k = 1 - i / n; d[i] = (Math.random() * 2 - 1) * k * k; }
+  _noise = b;
+  return b;
+}
+function sfxReady() {                                           // 只有用户点过之后才发声，避免自动播放被拦
+  return (_ac && _ac.state === 'running') ? _ac : null;
+}
+function sfxLaunch(dur) {                                        // 升空的"嗖"——高频哨音往上扫
+  const ac = sfxReady(); if (!ac) return;
+  try {
+    const t = ac.currentTime, f0 = 300 + Math.random() * 130;
+    const o = ac.createOscillator(), g = ac.createGain(), hp = ac.createBiquadFilter();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f0 * 3.1, t + dur);
+    hp.type = 'highpass'; hp.frequency.value = 260;
+    g.gain.setValueAtTime(.0001, t);
+    g.gain.exponentialRampToValueAtTime(.034, t + dur * .45);
+    g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(hp); hp.connect(g); g.connect(ac.destination);
+    o.start(t); o.stop(t + dur + .02);
+  } catch (e) {}
+}
+function sfxBoom() {                                             // 绽放的"砰"——噪声爆 + 低频闷响
+  const ac = sfxReady(); if (!ac) return;
+  try {
+    const t = ac.currentTime;
+    const src = ac.createBufferSource(); src.buffer = noiseBuf(ac);
+    const lp = ac.createBiquadFilter(), g = ac.createGain();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(2200, t);
+    lp.frequency.exponentialRampToValueAtTime(240, t + .32);
+    g.gain.setValueAtTime(.05, t);
+    g.gain.exponentialRampToValueAtTime(.0001, t + .38);
+    src.connect(lp); lp.connect(g); g.connect(ac.destination);
+    src.start(t);
+    const o = ac.createOscillator(), og = ac.createGain();       // 底下的闷响
+    o.type = 'sine';
+    o.frequency.setValueAtTime(92, t);
+    o.frequency.exponentialRampToValueAtTime(46, t + .2);
+    og.gain.setValueAtTime(.042, t);
+    og.gain.exponentialRampToValueAtTime(.0001, t + .22);
+    o.connect(og); og.connect(ac.destination);
+    o.start(t); o.stop(t + .24);
+  } catch (e) {}
+}
+
 function fxPrepare() {
   const cv = $('#annivFx'); if (!cv) return null;
   const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1857,6 +1923,7 @@ function fxPrepare() {
 }
 function fireworkAt(x, y, hue) {
   const sc = Math.min(1, Math.min(innerWidth, innerHeight) / 820);   // 小屏自动收小花径，避免糊满屏
+  sfxBoom();                                                         // 炸开的同时响一声
   _fxParts.push({ x, y, vx: 0, vy: 0, life: 1, hue, r: 9 * (.72 + sc * .28), flash: true });  // 中心一点亮芯，不是大白球
   const cnt = 70;
   for (let i = 0; i < cnt; i++) {
@@ -1864,6 +1931,18 @@ function fireworkAt(x, y, hue) {
     const sp = (Math.random() < .3 ? Math.random() * 1.1 : 1.7 + Math.random() * 2.6) * sc;   // 三成慢速粒子填住花心，不成空心环
     _fxParts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, hue: hue + Math.random() * 8 - 4, r: (2.0 + Math.random() * 1.6) * (.82 + sc * .18) });
   }
+  if (!_fxRAF) _fxRAF = requestAnimationFrame(fxLoop);
+}
+/* 升空：从屏幕底部冲上去，拖一条尾迹，到顶点才炸开 */
+function launchRocket(tx, ty, hue) {
+  const sx = tx + (Math.random() - .5) * innerWidth * .14;           // 起点略偏，冲上去是一条斜线
+  const dur = .92 + Math.random() * .34;                              // 0.92~1.26 秒到顶，慢慢升上去
+  _fxParts.push({
+    x: sx, y: innerHeight + 14, sx, sy: innerHeight + 14, tx, ty,
+    prog: 0, dur,
+    hue, rocket: true, tra: [sx, innerHeight + 14]
+  });
+  sfxLaunch(dur);
   if (!_fxRAF) _fxRAF = requestAnimationFrame(fxLoop);
 }
 function fxLoop() {
@@ -1874,6 +1953,39 @@ function fxLoop() {
   const W = innerWidth, H = innerHeight;
   for (let i = _fxParts.length - 1; i >= 0; i--) {
     const p = _fxParts[i];
+    if (p.rocket) {                                             // 升空中的引信：拖着尾迹往上冲
+      p.prog += 1 / (p.dur * 60);
+      if (p.prog >= 1) {
+        _fxParts.splice(i, 1);
+        fireworkAt(p.tx, p.ty, p.hue);                          // 到了顶点才炸
+        continue;
+      }
+      const e = 1 - Math.pow(1 - p.prog, 3);                    // 起步快、临近顶点减速
+      p.x = p.sx + (p.tx - p.sx) * e;
+      p.y = p.sy + (p.ty - p.sy) * e;
+      p.tra.push(p.x, p.y);
+      if (p.tra.length > 30) p.tra.splice(0, 2);
+      ctx.strokeStyle = 'hsl(' + p.hue + ',100%,72%)';
+      for (let j = 2; j < p.tra.length; j += 2) {               // 尾迹逐段变细变淡
+        const f = j / p.tra.length;
+        ctx.globalAlpha = .82 * f;
+        ctx.lineWidth = Math.max(.8, 4.4 * f);
+        ctx.beginPath();
+        ctx.moveTo(p.tra[j - 2], p.tra[j - 1]);
+        ctx.lineTo(p.tra[j], p.tra[j + 1]);
+        ctx.stroke();
+      }
+      if (Math.random() < .85) {                                // 一路撒火星子，落下来慢慢灭
+        _fxParts.push({ x: p.x + (Math.random() - .5) * 4, y: p.y + (Math.random() - .5) * 4, vx: (Math.random() - .5) * .7, vy: (Math.random() - .5) * .7 + .55, life: 1, dec: .014, hue: p.hue + Math.random() * 10 - 5, r: 1.8 + Math.random() * 1.1 });
+      }
+      ctx.fillStyle = 'hsl(' + p.hue + ',100%,70%)';            // 头部外圈光
+      ctx.globalAlpha = .55;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FFFFFF';                                // 头部亮核
+      ctx.globalAlpha = .95;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2); ctx.fill();
+      continue;
+    }
     if (p.flash) {                                              // 中心亮芯：一闪就收
       p.life -= .045;
       if (p.life <= 0) { _fxParts.splice(i, 1); continue; }
@@ -1884,7 +1996,7 @@ function fxLoop() {
     }
     p.x += p.vx; p.y += p.vy;
     p.vx *= .970; p.vy = p.vy * .970 + .030;                    // 快速收住不散太远，之后慢慢往下飘落
-    p.life -= .0048;                                            // 单颗约 3.5 秒才散尽，在空中停得久
+    p.life -= (p.dec || .0048);                                 // 单颗约 3.5 秒才散尽，空中停得久
     if (p.life <= 0) { _fxParts.splice(i, 1); continue; }
     if (p.x < -90 || p.x > W + 90 || p.y < -90 || p.y > H + 90) { _fxParts.splice(i, 1); continue; }
     const a = Math.max(0, p.life);
@@ -1923,7 +2035,10 @@ function fireworksShow(n) {
   const boomAt = (i) => {
     const p = pos[i % pos.length];
     const fx = .20 + (flip > 0 ? p[0] : 1 - p[0]) * .60;
-    fireworkAt(innerWidth * (fx + (Math.random() - .5) * .05), innerHeight * (.22 + p[1] * .42 + (Math.random() - .5) * .04), hues[(i + off) % hues.length]);
+    // 先算出炸点（偏上半屏），再让引信从底部升上去
+    const tx = innerWidth * (fx + (Math.random() - .5) * .05);
+    const ty = innerHeight * (.22 + p[1] * .30 + (Math.random() - .5) * .04);
+    launchRocket(tx, ty, hues[(i + off) % hues.length]);
   };
   // 分成几批放：每批 1~3 朵，批与批之间固定节奏铺开，整场约 8 秒
   const nb = innerWidth < 520 ? 5 : 7;
@@ -1931,7 +2046,7 @@ function fireworksShow(n) {
   const groups = [];
   for (let g = 0; g < nb; g++) groups.push(base + (g < extra ? 1 : 0));
   groups.sort(() => Math.random() - .5);                        // 打乱节奏，每次不一样
-  const SPAN = 4200;                                            // 第一朵到最后一朵的总跨度（毫秒）
+  const SPAN = 3800;                                            // 第一朵到最后一朵的总跨度（毫秒）
   let idx = 0;
   groups.forEach((size, g) => {
     const t0 = (g / (nb - 1)) * SPAN;
@@ -1968,6 +2083,7 @@ function closeAnniv() { annivHide(); annivClearFx(); }
 /* 放烟花：先让弹窗退场，烟花画在独立的全屏层上，不会被卡片挡住 */
 function annivBoom() {
   const n = 15;                                                 // 月纪念与周年都是 15 朵
+  audioCtx();                                                   // 在点击手势里先唤醒音频，之后才播得出声
   annivHide();
   annivClearFx();
   setTimeout(() => fireworksShow(n), 140);
