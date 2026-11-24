@@ -156,6 +156,52 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 .cal-foot .dot{width:7px;height:7px}
 .cal-foot span{display:flex;align-items:center;gap:6px}
 
+/* ============ 经期助手 ============ */
+.period-card{background:linear-gradient(135deg,#FFF1F5 0%,#FFE1EB 100%);border:1.5px solid #FFD0DE;border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.period-top{display:flex;align-items:center;gap:10px}
+.period-ic{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#FF93AE,#F26D92);display:grid;place-items:center;color:#fff;flex:none;box-shadow:0 4px 10px rgba(242,109,146,.35)}
+.period-ic .i{width:22px;height:22px}
+.period-main{flex:1;min-width:0}
+.period-main .pt{font-family:var(--font-display);font-size:16px;color:var(--pink-deep);white-space:nowrap}
+.period-main .ps{font-size:12px;color:var(--ink-soft);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.period-main .ps b{color:#E0487A;font-size:14px}
+.period-actions{display:flex;gap:8px;flex:none}
+.p-btn{border-radius:999px;padding:8px 14px;font-size:13px;font-weight:700;white-space:nowrap;transition:.2s}
+.p-btn.main{background:linear-gradient(135deg,#FF93AE,#F26D92);color:#fff;box-shadow:0 4px 10px rgba(242,109,146,.3)}
+.p-btn.main:hover{transform:translateY(-1px)}
+.p-btn.ghost{background:#fff;color:var(--pink-deep);border:1.5px solid #FFD0DE}
+.p-btn.ghost:hover{background:#FFF6F9}
+.period-hist{margin-top:12px;display:flex;flex-wrap:wrap;gap:7px}
+.period-tag{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #FBD3DE;color:#D4557C;font-size:12px;font-weight:700;border-radius:999px;padding:4px 6px 4px 11px}
+.period-tag button{color:#E6B3C2;padding:2px;border-radius:6px;display:inline-flex}
+.period-tag button:hover{color:#E0618A;background:#FFF0F4}
+.period-hint{font-size:11px;color:var(--ink-soft);margin-top:10px;opacity:.85;line-height:1.6}
+
+/* 日历格子：经期状态（实际/预测） */
+.cal-cell{position:relative}
+.cal-cell.p-actual{background:linear-gradient(135deg,#FF86A3,#F1547D)}
+.cal-cell.p-actual .cal-num{color:#fff}
+.cal-cell.p-actual .dot{background:rgba(255,255,255,.4)}
+.cal-cell.p-actual .dot.on{background:#fff}
+.cal-cell.p-actual:hover{background:linear-gradient(135deg,#FF86A3,#F1547D)}
+.cal-cell.p-predict{background:#FFE2EB}
+.cal-cell.p-predict .cal-num{color:#E0487A}
+.cal-cell.p-predict:hover{background:#FFD6E2}
+.cal-cell.p-predict.today{box-shadow:inset 0 0 0 2px var(--pink-deep)}
+.p-drop{position:absolute;top:5px;left:6px;width:9px;height:9px;color:#E0487A;pointer-events:none}
+.cal-cell.p-actual .p-drop{color:#fff}
+.p-leg{width:14px;height:14px;border-radius:5px;display:inline-block}
+.p-leg.actual{background:linear-gradient(135deg,#FF86A3,#F1547D)}
+.p-leg.predict{background:#FFE2EB;border:1px solid #F7B9CB}
+
+/* 经期提醒弹窗 */
+.period-alert{text-align:center;padding:28px 22px 24px}
+.period-alert .pa-ic{width:64px;height:64px;border-radius:22px;background:linear-gradient(135deg,#FF93AE,#F26D92);display:grid;place-items:center;color:#fff;margin:0 auto 14px;box-shadow:0 8px 18px rgba(242,109,146,.35)}
+.period-alert .pa-ic .i{width:32px;height:32px}
+.period-alert h3{font-family:var(--font-display);font-size:20px;color:var(--pink-deep);margin-bottom:8px}
+.period-alert p{font-size:14px;line-height:1.8;color:var(--ink);margin-bottom:20px}
+.period-alert .btn{width:100%}
+
 /* ============ 视图切换 ============ */
 .section{display:none}
 .section.on{display:block}
@@ -430,6 +476,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
       <span class="t">打卡日历</span>
       <span class="note">点点小圆点，看看谁学了</span>
     </div>
+    <div class="period-card" id="periodCard"></div>
     <div class="cal-card">
       <div class="cal-head">
         <button class="arr sm" id="calPrev" aria-label="上一月"><svg class="i"><use href="#i-chev-l" xlink:href="#i-chev-l"/></svg></button>
@@ -443,6 +490,8 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
         <span><i class="dot on dot-a"></i><span id="calLegA">兔兔</span></span>
         <span><i class="dot on dot-b"></i><span id="calLegB">熊熊</span></span>
         <span><i class="dot on dot-e"></i>事件</span>
+        <span><i class="p-leg actual"></i>经期</span>
+        <span><i class="p-leg predict"></i>预测</span>
         <span>点击日期查看当天记录</span>
       </div>
     </div>
@@ -484,6 +533,31 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
 </div>
 
 <!-- ===== 添加记录弹窗 ===== -->
+<div class="mask" id="periodMask">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="periodTitle">
+    <div class="modal-top">
+      <h3 id="periodTitle">记录大姨妈</h3>
+      <button class="x" data-close aria-label="关闭"><svg class="i"><use href="#i-close" xlink:href="#i-close"/></svg></button>
+    </div>
+    <div class="field"><label>来潮日期</label><input type="date" id="pDate"></div>
+    <div class="field"><label>每次持续天数</label><input type="number" id="pLen" min="2" max="14"></div>
+    <div class="field"><label>提前几天提醒</label><input type="number" id="pBefore" min="1" max="10"></div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" data-close>取消</button>
+      <button class="btn btn-main" id="savePeriod">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="periodAlertMask">
+  <div class="modal period-alert" role="dialog" aria-modal="true" aria-labelledby="periodAlertTitle">
+    <div class="pa-ic"><svg class="i"><use href="#i-drop" xlink:href="#i-drop"/></svg></div>
+    <h3 id="periodAlertTitle">经期小提醒</h3>
+    <p id="periodAlertText"></p>
+    <button class="btn btn-main" id="periodAlertOk">知道啦，提前准备</button>
+  </div>
+</div>
+
 <div class="mask" id="addMask">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
     <div class="modal-top">
@@ -674,6 +748,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #FFB1C6;outline-offset:2p
   <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 5.5h16a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M3 7.5 12 14l9-6.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/></symbol>
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 7.5h3l1.5-2.5h7L17 7.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.6" fill="none" stroke="currentColor" stroke-width="1.9"/></symbol>
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M8.5 11.5 12 15l3.5-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 19.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2.7s7 7.7 7 12.1a7 7 0 1 1-14 0C5 10.4 12 2.7 12 2.7z" fill="currentColor" stroke="none"/></symbol>
 </svg>
 
 <script>
@@ -753,7 +828,8 @@ function defaults() {
     records: {},
     memos: [],
     notes: [],
-    moments: []
+    moments: [],
+    period: { history: ['2026-10-03', '2026-10-31'], periodLen: 5, remindBefore: 3, initialized: true }
   };
 }
 function load() {
@@ -764,6 +840,16 @@ function load() {
       d.memos = Array.isArray(d.memos) ? d.memos : [];
       d.notes = Array.isArray(d.notes) ? d.notes : [];
       d.moments = Array.isArray(d.moments) ? d.moments : [];
+      // 旧版数据或被旧云端清空（无 initialized 标记）：恢复预置的两条历史
+      if (!d.period || d.period.initialized !== true) {
+        const old = d.period || {};
+        d.period = normalizePeriod({
+          history: ['2026-10-03', '2026-10-31'],
+          periodLen: old.periodLen, remindBefore: old.remindBefore
+        });
+      } else {
+        d.period = normalizePeriod(d.period);
+      }
       return d;
     }
   } catch (e) {}
@@ -1133,7 +1219,7 @@ async function cloudUpload(manual) {
   if (!cloudOk()) { setCloudState('off'); if (manual) showToast('请先在设置里填写云端配置并开启同步'); return; }
   setCloudState('syncing', '正在上传…');
   try {
-    const res = await ossReq('PUT', { couple: data.couple, records: data.records, memos: data.memos, notes: data.notes, moments: data.moments });
+    const res = await ossReq('PUT', { couple: data.couple, records: data.records, memos: data.memos, notes: data.notes, moments: data.moments, period: data.period });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
     saveCloud();
@@ -1158,8 +1244,13 @@ async function cloudDownload(manual) {
     data.memos = Array.isArray(remote.memos) ? remote.memos : (data.memos || []);
     data.notes = Array.isArray(remote.notes) ? remote.notes : (data.notes || []);
     data.moments = Array.isArray(remote.moments) ? remote.moments : (data.moments || []);
+    // 云端为旧版（无 period 字段）时保留本地数据，避免把已有关怀记录清空
+    if (remote.period && typeof remote.period === 'object' && Array.isArray(remote.period.history)) {
+      data.period = normalizePeriod(remote.period);
+    }
     saveLocal(data);
     render();
+    periodAlertCheck();
     cloud.lastSync = new Date().toLocaleString('zh-CN', { hour12: false });
     saveCloud();
     setCloudState('ok', '已从云端下载 · ' + cloud.lastSync);
@@ -1210,7 +1301,7 @@ let replyOpenNote = null;
 let momentFiles = [];
 
 /* ============ 渲染：顶栏与统计 ============ */
-function render() { renderBadge(); renderStats(); renderDateNav(); renderProgress(); renderRecords(); renderCalendar(); renderMemo(); renderNotes(); renderMoments(); }
+function render() { renderBadge(); renderStats(); renderDateNav(); renderProgress(); renderRecords(); renderPeriodCard(); renderCalendar(); renderMemo(); renderNotes(); renderMoments(); }
 
 function renderBadge() {
   const n = dayDiff(todayStr(), data.couple.startDate);
@@ -1294,19 +1385,129 @@ function renderCalendar() {
   $('#calMonth').textContent = y + '年' + (m + 1) + '月';
   const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
   const days = new Date(y, m + 1, 0).getDate();
+  // 预计算当月经期状态：actual 实际 / predict 预测（实际记录优先）
+  const pmap = {}, pstarts = {};
+  const fillRange = (s, type) => {
+    pstarts[s] = type;
+    for (let k = 0; k < data.period.periodLen; k++) {
+      const ds2 = addDays(s, k);
+      if (type === 'actual' || !(ds2 in pmap)) pmap[ds2] = type;
+    }
+  };
+  data.period.history.forEach(s => fillRange(s, 'actual'));
+  periodStarts(addDays(y + '-' + pad(m + 1) + '-' + pad(days), 1)).forEach(s => fillRange(s, 'predict'));
   let cells = '';
   for (let i = 0; i < firstDow; i++) cells += '<div class="cal-cell blank"></div>';
   for (let day = 1; day <= days; day++) {
     const ds = y + '-' + pad(m + 1) + '-' + pad(day);
     const recs = data.records[ds] || [];
     const a = recs.some(r => r.who === 'A'), b = recs.some(r => r.who === 'B');
-    const ev = (data.memos || []).some(m => m.due === ds);
-    cells += '<button class="cal-cell' + (ds === cur ? ' sel' : '') + (ds === todayStr() ? ' today' : '') + '" data-date="' + ds + '" aria-label="' + ds + ' 的学习记录">' +
+    const ev = (data.memos || []).some(mx => mx.due === ds);
+    const ptype = pmap[ds];
+    const cls = 'cal-cell' + (ptype ? ' p-' + ptype : '') + (ds === cur ? ' sel' : '') + (ds === todayStr() ? ' today' : '');
+    const drop = pstarts[ds] ? '<svg class="p-drop" viewBox="0 0 24 24"><use href="#i-drop" xlink:href="#i-drop"/></svg>' : '';
+    const label = ds + (ptype === 'actual' ? ' 经期' : ptype === 'predict' ? ' 预测经期' : '') + ' 的学习记录';
+    cells += '<button class="' + cls + '" data-date="' + ds + '" aria-label="' + label + '">' + drop +
       '<span class="cal-num">' + day + '</span><span class="cal-dots"><i class="dot dot-a' + (a ? ' on' : '') + '"></i><i class="dot dot-b' + (b ? ' on' : '') + '"></i><i class="dot dot-e' + (ev ? ' on' : '') + '"></i></span></button>';
   }
   $('#calGrid').innerHTML = cells;
   $('#calLegA').textContent = data.couple.nameA;
   $('#calLegB').textContent = data.couple.nameB;
+}
+
+/* ============ 经期预测模块 ============ */
+const PERIOD_ALERT_KEY = 'qlp-period-alert-v1';
+function normalizePeriod(p) {
+  p = p && typeof p === 'object' ? p : {};
+  const history = Array.isArray(p.history)
+    ? Array.from(new Set(p.history.filter(s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s)))).sort()
+    : [];
+  return {
+    history,
+    periodLen: Math.min(14, Math.max(2, Math.round(Number(p.periodLen) || 5))),
+    remindBefore: Math.min(10, Math.max(1, Math.round(Number(p.remindBefore) || 3))),
+    initialized: true
+  };
+}
+/* 平均周期：相邻两次实际来潮间隔的平均值，四舍五入；数据不足时默认 28 天 */
+function periodCycle() {
+  const h = data.period.history;
+  if (h.length < 2) return 28;
+  let sum = 0;
+  for (let i = 1; i < h.length; i++) sum += dayDiff(h[i], h[i - 1]);
+  return Math.min(45, Math.max(20, Math.round(sum / (h.length - 1))));
+}
+/* 从最后一次实际来潮日按周期外推，返回不晚于 endDate 的全部预测开始日 */
+function periodStarts(endDate) {
+  const h = data.period.history;
+  const base = h.length ? h[h.length - 1] : todayStr();
+  const cycle = periodCycle();
+  const out = [];
+  let p = addDays(base, cycle), guard = 0;
+  while (dayDiff(p, endDate) <= 0 && guard < 48) { out.push(p); p = addDays(p, cycle); guard++; }
+  return out;
+}
+function renderPeriodCard() {
+  const t = todayStr();
+  const starts = periodStarts(addDays(t, 400));
+  const next = starts[0] || '';
+  const gap = next ? dayDiff(next, t) : null;
+  let status = '暂无预测，先记录一次来潮日吧';
+  if (gap === 0) status = '按预测<b>今天可能要来</b>，多喝热水少喝冰';
+  else if (gap > 0) status = '预计 <b>' + dateLabel(next) + '</b> 来，还有 <b>' + gap + '</b> 天';
+  const hist = data.period.history.slice().reverse().map(s =>
+    '<span class="period-tag">' + s +
+      '<button class="p-del" data-pdel="' + s + '" aria-label="删除 ' + s + ' 的记录"><svg class="i" style="width:13px;height:13px"><use href="#i-close" xlink:href="#i-close"/></svg></button>' +
+    '</span>').join('');
+  $('#periodCard').innerHTML =
+    '<div class="period-top">' +
+      '<div class="period-ic"><svg class="i"><use href="#i-drop" xlink:href="#i-drop"/></svg></div>' +
+      '<div class="period-main"><div class="pt">经期小助手</div><div class="ps">' + status + ' · 周期约 ' + periodCycle() + ' 天</div></div>' +
+      '<div class="period-actions"><button class="p-btn main" id="openPeriod">记录大姨妈</button></div>' +
+    '</div>' +
+    (hist ? '<div class="period-hist">' + hist + '</div>' : '') +
+    '<div class="period-hint">记录实际来潮日后，预测会自动按历史平均周期重新推算；提前 ' + data.period.remindBefore + ' 天起每天弹窗提醒一次</div>';
+}
+function openPeriodMask() {
+  $('#pDate').value = todayStr();
+  $('#pLen').value = data.period.periodLen;
+  $('#pBefore').value = data.period.remindBefore;
+  openMask('periodMask');
+}
+$('#periodCard').addEventListener('click', e => {
+  if (e.target.closest('#openPeriod')) { openPeriodMask(); return; }
+  const del = e.target.closest('[data-pdel]');
+  if (!del) return;
+  if (!confirm('删除 ' + del.dataset.pdel + ' 的记录吗？')) return;
+  data.period.history = data.period.history.filter(s => s !== del.dataset.pdel);
+  persist(data); render();
+});
+$('#savePeriod').addEventListener('click', () => {
+  const d = $('#pDate').value;
+  if (!d) { showToast('选一下来潮日期呀'); return; }
+  if (!data.period.history.includes(d)) data.period.history.push(d);
+  data.period.history.sort();
+  data.period.periodLen = Math.min(14, Math.max(2, Math.round(Number($('#pLen').value) || 5)));
+  data.period.remindBefore = Math.min(10, Math.max(1, Math.round(Number($('#pBefore').value) || 3)));
+  persist(data); closeMask('periodMask'); render();
+  showToast('已记录，预测已更新');
+});
+$('#periodAlertOk').addEventListener('click', () => closeMask('periodAlertMask'));
+/* 提前 N 天提醒：窗口内每天每台设备弹窗一次，localStorage 记录已弹日期 */
+function periodAlertCheck() {
+  const t = todayStr();
+  const starts = periodStarts(addDays(t, 60));
+  if (!starts.length) return;
+  const target = starts[0], gap = dayDiff(target, t);
+  if (gap < 0 || gap > data.period.remindBefore) return;
+  let shown = '';
+  try { shown = localStorage.getItem(PERIOD_ALERT_KEY) || ''; } catch (e) {}
+  if (shown === t) return;
+  $('#periodAlertText').textContent = gap === 0
+    ? '按预测今天（' + dateLabel(target) + '）大姨妈可能要来啦，记得备好暖宝宝和红糖水，少喝冰的呀'
+    : '距离大姨妈预计还有 ' + gap + ' 天（' + dateLabel(target) + '），提前备好暖宝宝和红糖水呀';
+  openMask('periodAlertMask');
+  try { localStorage.setItem(PERIOD_ALERT_KEY, t); } catch (e) {}
 }
 
 /* ============ 视图切换 ============ */
@@ -2043,7 +2244,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#annivM
 /* 页面长期挂着时跨到纪念日也能触发；离开纪念日则收起氛围层 */
 let _annivDay = todayStr();
 setInterval(() => {
-  if (todayStr() !== _annivDay) { _annivDay = todayStr(); annivSync(); }
+  if (todayStr() !== _annivDay) { _annivDay = todayStr(); annivSync(); periodAlertCheck(); }
 }, 60000);
 
 /* ============ 视图切换 & 初始化 ============ */
@@ -2056,6 +2257,7 @@ render();
 refreshCloudStatus();
 if (cloudOk()) cloudDownload(false);
 annivSync();
+periodAlertCheck();
 
 
 </script>
